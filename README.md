@@ -11,7 +11,7 @@ Buildchain creates networks of several build, signing, and publishing nodes in o
 
 Note than one machine can participate in a network as more than one role. It is also possible to download network data as an observer, provided you have credentials.
 
-### Build
+### Building
 
 Build nodes download input artifacts from a remote repository, usually a git source code repository. They then follow a set of build steps, usually a Dockerfile, to produce output artifacts. A manifest of the output artifacts and their shasum is created, which is then signed by either the build node or a signing node. Finally, the output artifacts and the signed manifest are published on the network, with a reference to the manifest placed in a secondary blockchain.
 
