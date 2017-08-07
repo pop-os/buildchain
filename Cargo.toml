@@ -6,7 +6,7 @@ description = "Software for creating and managing a distributed and reproducible
 documentation = "https://docs.rs/buildchain"
 repository = "https://github.com/system76/buildchain"
 readme = "README.md"
-license = "GPLv3"
+license = "GPL-3.0"
 
 [lib]
 name = "buildchain"
