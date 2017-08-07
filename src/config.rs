@@ -62,7 +62,7 @@ mod tests {
     #[test]
     fn test_build() {
         let config = {
-            let mut file = File::open("tests/res/config.json").unwrap();
+            let mut file = File::open("tests/res/config/buildchain.json").unwrap();
             let mut json = String::new();
             file.read_to_string(&mut json).unwrap();
             serde_json::from_str::<Config>(&json).unwrap()

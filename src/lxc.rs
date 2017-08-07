@@ -13,7 +13,7 @@ fn lxc(args: &[&str]) -> io::Result<()> {
     } else {
         Err(io::Error::new(
             io::ErrorKind::Other,
-            format!("LXC {:?} failed with error: {}", args, status)
+            format!("LXC {:?} failed with {}", args, status)
         ))
     }
 }
@@ -83,6 +83,35 @@ impl Lxc {
             args.push(arg.as_ref());
         }
         lxc(&args)?;
+        Ok(())
+    }
+
+    /// Mount a path in an LXC container
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name of the mount
+    /// * `source` - The source path to mount
+    /// * `path` - The destination of the mount
+    ///
+    /// # Return
+    ///
+    /// And empty tuple on success
+    ///
+    /// # Errors
+    ///
+    /// Errors that are encountered while mounting will be returned
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use buildchain::Lxc;
+    ///
+    /// let mut lxc = Lxc::new("test-mount", "ubuntu:16.04").unwrap();
+    /// lxc.mount("source", ".", "/root/source").unwrap();
+    /// ```
+    pub fn mount(&mut self, name: &str, source: &str, path: &str) -> io::Result<()> {
+        lxc(&["config", "device", "add", &self.0, name, "disk", &format!("source={}", source), &format!("path={}", path)])?;
         Ok(())
     }
 }
