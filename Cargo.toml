@@ -3,6 +3,15 @@ name = "buildchain"
 version = "0.1.0"
 authors = ["Jeremy Soller <jackpot51@gmail.com>"]
 
+[lib]
+name = "buildchain"
+path = "src/lib.rs"
+
+[[bin]]
+name = "buildchain"
+path = "src/main.rs"
+doc = false
+
 [dependencies]
 hex = "0.2"
 serde = "1.0"

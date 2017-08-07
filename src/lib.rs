@@ -1,3 +1,5 @@
+//! Buildchain creates and manages a distributed and reproducible chain of builds
+
 extern crate hex;
 extern crate serde;
 #[macro_use]
