@@ -1,0 +1,7 @@
+{
+    "name": "test-apt",
+    "base": "ubuntu:16.04",
+    "commands": [
+        ["apt-get", "update"]
+    ]
+}

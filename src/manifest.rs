@@ -36,7 +36,6 @@ impl Manifest {
     /// use buildchain::Manifest;
     ///
     /// let manifest = Manifest::new(1500000000, "tests/res/artifacts").unwrap();
-    /// println!("{:?}", manifest);
     /// ```
     pub fn new<P: AsRef<Path>>(time: u64, path: P) -> Result<Manifest> {
         let mut files = BTreeMap::new();
