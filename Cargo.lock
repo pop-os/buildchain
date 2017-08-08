@@ -1,6 +1,6 @@
 [root]
 name = "buildchain"
-version = "0.1.2"
+version = "0.1.4"
 dependencies = [
  "clap 2.26.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "hex 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
