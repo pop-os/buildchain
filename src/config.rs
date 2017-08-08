@@ -1,7 +1,5 @@
-use std::{fs, io};
-use std::collections::BTreeMap;
-
-use super::{Location, Lxc};
+use lxd::{Location, Container};
+use std::io;
 
 /// A build configuration
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
@@ -12,10 +10,9 @@ pub struct Config {
     pub base: String,
     /// The commands to run that generate the build artifacts
     pub commands: Vec<Vec<String>>,
-    /// A list of build artifacts
-    pub artifacts: BTreeMap<String, String>,
+    /// A directory of build artifacts
+    pub artifacts: Option<String>,
 }
-
 
 impl Config {
     /// Run a build configuration
@@ -38,23 +35,22 @@ impl Config {
     ///     name: "test-config".to_string(),
     ///     base: "ubuntu:16.04".to_string(),
     ///     commands: vec![vec!["echo".to_string(), "hello".to_string()]],
-    ///     artifacts: BTreeMap::new(),
+    ///     artifacts: None,
     /// };
     /// config.run(Location::Local, "tests/res/config/buildchain.out").unwrap();
     /// ```
     pub fn run(&self, location: Location, output: &str) -> io::Result<()> {
-        let mut lxc = Lxc::new(location, &self.name, &self.base)?;
+        let mut container = Container::new(location, &format!("buildchain-{}", self.name), &self.base)?;
         for command in self.commands.iter() {
             let mut args = vec![];
             for arg in command.iter() {
                 args.push(arg.as_str());
             }
-            lxc.exec(&args)?;
+            container.exec(&args)?;
         }
 
-        fs::create_dir_all(output)?;
-        for (name, path) in self.artifacts.iter() {
-            lxc.pull(path, &format!("{}/{}", output, name))?;
+        if let Some(ref artifacts) = self.artifacts {
+            container.pull(&artifacts, output, true)?;
         }
 
         Ok(())

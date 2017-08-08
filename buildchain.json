@@ -9,9 +9,8 @@
         ["git", "clone", "https://github.com/system76/buildchain.git", "source"],
         ["mkdir", "sysroot"],
         ["bash", "-c", "source .cargo/env && cargo install --path source --root sysroot"],
-        ["tar", "--create", "--xz", "--file", "sysroot.tar.xz", "--directory", "sysroot", "."]
+        ["mkdir", "artifacts"],
+        ["tar", "--create", "--xz", "--file", "artifacts/buildchain.tar.xz", "--directory", "sysroot", "."]
     ],
-    "artifacts": {
-        "buildchain.tar.xz": "/root/sysroot.tar.xz"
-    }
+    "artifacts": "/root/artifacts"
 }
