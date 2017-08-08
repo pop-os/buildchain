@@ -2,7 +2,7 @@
 Software for creating and managing a distributed and reproducible chain of builds
 
 [![crates.io](https://img.shields.io/crates/v/buildchain.svg)](https://crates.io/crates/buildchain)
-[![docs.rs](https://docs.rs/mio/badge.svg)](https://docs.rs/buildchain)
+[![docs.rs](https://docs.rs/buildchain/badge.svg)](https://docs.rs/buildchain)
 *Currently in development*
 
 ## Overview
