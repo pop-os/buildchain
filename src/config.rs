@@ -1,5 +1,9 @@
 use lxd::{Location, Container};
 use std::io;
+use std::path::PathBuf;
+use tempdir::TempDir;
+
+use super::Source;
 
 /// A build configuration
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
@@ -8,10 +12,10 @@ pub struct Config {
     pub name: String,
     /// The LXC base to use
     pub base: String,
+    /// The source repository (git only, for now)
+    pub source: Source,
     /// The commands to run that generate the build artifacts
     pub commands: Vec<Vec<String>>,
-    /// A directory of build artifacts
-    pub artifacts: Option<String>,
 }
 
 impl Config {
@@ -39,21 +43,44 @@ impl Config {
     /// };
     /// config.run(Location::Local, "tests/res/config/buildchain.out").unwrap();
     /// ```
-    pub fn run(&self, location: Location, output: &str) -> io::Result<()> {
-        let mut container = Container::new(location, &format!("buildchain-{}", self.name), &self.base)?;
-        for command in self.commands.iter() {
-            let mut args = vec![];
-            for arg in command.iter() {
-                args.push(arg.as_str());
+    pub fn run(&self, location: Location) -> io::Result<(u64, PathBuf)> {
+        println!("Create temporary directory");
+        let temp_dir = TempDir::new("buildchain")?;
+
+        println!("Download source using {}: {}", self.source.kind, self.source.url);
+        let time = self.source.download(temp_dir.path().join("source"))?;
+        let time_str = format!("{}", time);
+
+        {
+            println!("Create container: {}", self.base);
+            let mut container = Container::new(location, &format!("buildchain-{}", self.name), &self.base)?;
+
+            println!("Push source");
+            container.push(temp_dir.path().join("source"), "/root", true)?;
+
+            println!("Create artifact directory");
+            container.exec(&["mkdir", "/root/artifacts"])?;
+
+            for command in self.commands.iter() {
+                let mut replaced = vec![];
+                for arg in command.iter() {
+                    replaced.push(arg.replace("${BUILDCHAIN_TIME}", &time_str));
+                }
+
+                let mut args = vec![];
+                for arg in replaced.iter() {
+                    args.push(arg.as_str());
+                }
+
+                println!("Run {:?}", args);
+                container.exec(&args)?;
             }
-            container.exec(&args)?;
+
+            println!("Pull artifacts");
+            container.pull("/root/artifacts", temp_dir.path(), true)?;
         }
 
-        if let Some(ref artifacts) = self.artifacts {
-            container.pull(&artifacts, output, true)?;
-        }
-
-        Ok(())
+        Ok((time, temp_dir.into_path()))
     }
 }
 

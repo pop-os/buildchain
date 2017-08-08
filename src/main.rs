@@ -2,7 +2,7 @@ extern crate buildchain;
 extern crate clap;
 extern crate serde_json;
 
-use buildchain::{Config, Location};
+use buildchain::{Config, Location, Manifest};
 use clap::{App, Arg};
 use std::fs::File;
 use std::io::Read;
@@ -64,10 +64,38 @@ fn main() {
         Location::Local
     };
 
-    match config.run(location, output_path) {
-        Ok(_) => (),
+    let (time, temp_dir) = match config.run(location) {
+        Ok(t) => t,
         Err(err) => {
             eprintln!("buildchain: failed to run {}: {}", config_path, err);
+            process::exit(1)
+        }
+    };
+
+    println!("{}", temp_dir.display());
+    let manifest = match Manifest::new(time, temp_dir.join("artifacts")) {
+        Ok(manifest) => manifest,
+        Err(err) => {
+            eprintln!("buildchain: failed to generate manifest: {}", err);
+            process::exit(1)
+        }
+    };
+
+    println!("{:?}", manifest);
+
+    match File::create(temp_dir.join("manifest.json")) {
+        Ok(mut file) => {
+            if let Err(err) = serde_json::to_writer(&mut file, &manifest) {
+                eprintln!("buildchain: failed to write manifest: {}", err);
+                process::exit(1)
+            }
+            if let Err(err) = file.sync_all() {
+                eprintln!("buildchain: failed to sync manifest: {}", err);
+                process::exit(1)
+            }
+        },
+        Err(err) => {
+            eprintln!("buildchain: failed to create manifest: {}", err);
             process::exit(1)
         }
     }
