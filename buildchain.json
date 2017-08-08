@@ -2,9 +2,16 @@
     "name": "buildchain",
     "base": "ubuntu:16.04",
     "commands": [
-        ["apt-get", "update"],
-        ["apt-get", "install", "-y", "cargo"],
-        ["git", "clone", "https://github.com/system76/buildchain.git"],
-        ["bash", "-c", "cd buildchain && cargo build --release"]
-    ]
+        ["apt-get", "install", "-y", "gcc"],
+        ["wget", "https://sh.rustup.rs", "-O", "rustup.sh"],
+        ["chmod", "+x", "rustup.sh"],
+        ["./rustup.sh", "-y", "--default-toolchain", "nightly"],
+        ["git", "clone", "https://github.com/system76/buildchain.git", "source"],
+        ["mkdir", "sysroot"],
+        ["bash", "-c", "source .cargo/env && cargo install --path source --root sysroot"],
+        ["tar", "--create", "--xz", "--file", "sysroot.tar.xz", "--directory", "sysroot", "."]
+    ],
+    "artifacts": {
+        "buildchain.tar.xz": "/root/sysroot.tar.xz"
+    }
 }

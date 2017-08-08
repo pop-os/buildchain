@@ -1,6 +1,8 @@
 use std::io;
 use std::process::Command;
 
+use super::Location;
+
 fn lxc(args: &[&str]) -> io::Result<()> {
     let mut cmd = Command::new("lxc");
     for arg in args.iter() {
@@ -40,12 +42,15 @@ impl Lxc {
     /// # Example
     ///
     /// ```
-    /// use buildchain::Lxc;
+    /// use buildchain::{Location, Lxc};
     ///
-    /// let mut lxc = Lxc::new("test-new", "ubuntu:16.04").unwrap();
+    /// let mut lxc = Lxc::new(Location::Local, "test-new", "ubuntu:16.04").unwrap();
     /// ```
-    pub fn new(name: &str, base: &str) -> io::Result<Lxc> {
-        let full_name = format!("buildchain-{}", name);
+    pub fn new(location: Location, name: &str, base: &str) -> io::Result<Lxc> {
+        let full_name = match location {
+            Location::Local => format!("buildchain-{}", name),
+            Location::Remote(remote) => format!("{}:buildchain-{}", remote, name)
+        };
 
         lxc(&["launch", base, &full_name, "-e", "-n", "lxdbr0"])?;
 
@@ -72,9 +77,9 @@ impl Lxc {
     /// # Example
     ///
     /// ```
-    /// use buildchain::Lxc;
+    /// use buildchain::{Location, Lxc};
     ///
-    /// let mut lxc = Lxc::new("test-exec", "ubuntu:16.04").unwrap();
+    /// let mut lxc = Lxc::new(Location::Local, "test-exec", "ubuntu:16.04").unwrap();
     /// lxc.exec(&["echo", "hello"]).unwrap();
     /// ```
     pub fn exec(&mut self, command: &[&str]) -> io::Result<()> {
@@ -82,8 +87,7 @@ impl Lxc {
         for arg in command.as_ref().iter() {
             args.push(arg.as_ref());
         }
-        lxc(&args)?;
-        Ok(())
+        lxc(&args)
     }
 
     /// Mount a path in an LXC container
@@ -92,7 +96,7 @@ impl Lxc {
     ///
     /// * `name` - The name of the mount
     /// * `source` - The source path to mount
-    /// * `path` - The destination of the mount
+    /// * `dest` - The destination of the mount
     ///
     /// # Return
     ///
@@ -105,14 +109,40 @@ impl Lxc {
     /// # Example
     ///
     /// ```
-    /// use buildchain::Lxc;
+    /// use buildchain::{Location, Lxc};
     ///
-    /// let mut lxc = Lxc::new("test-mount", "ubuntu:16.04").unwrap();
+    /// let mut lxc = Lxc::new(Location::Local, "test-mount", "ubuntu:16.04").unwrap();
     /// lxc.mount("source", ".", "/root/source").unwrap();
     /// ```
-    pub fn mount(&mut self, name: &str, source: &str, path: &str) -> io::Result<()> {
-        lxc(&["config", "device", "add", &self.0, name, "disk", &format!("source={}", source), &format!("path={}", path)])?;
-        Ok(())
+    pub fn mount(&mut self, name: &str, source: &str, dest: &str) -> io::Result<()> {
+        lxc(&["config", "device", "add", &self.0, name, "disk", &format!("source={}", source), &format!("path={}", dest)])
+    }
+
+    /// Pull a file from the LXC container
+    ///
+    /// # Arguments
+    ///
+    /// * `source` - The source of the file in the container
+    /// * `dest` - The destination of the file in the host
+    ///
+    /// # Return
+    ///
+    /// And empty tuple on success
+    ///
+    /// # Errors
+    ///
+    /// Errors that are encountered while mounting will be returned
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use buildchain::{Location, Lxc};
+    ///
+    /// let mut lxc = Lxc::new(Location::Local, "test-pull", "ubuntu:16.04").unwrap();
+    /// lxc.pull("/etc/hostname", "target/hostname").unwrap();
+    /// ```
+    pub fn pull(&mut self, source: &str, dest: &str) -> io::Result<()> {
+        lxc(&["file", "pull", &format!("{}/{}", self.0, source), dest])
     }
 }
 
