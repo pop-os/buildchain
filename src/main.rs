@@ -28,7 +28,7 @@ fn main() {
                     .get_matches();
 
     let config_path = matches.value_of("config").unwrap_or("buildchain.json");
-    let output_path = matches.value_of("output").unwrap_or("buildchain.output");
+    let output_path = matches.value_of("output").unwrap_or("buildchain.out");
     let remote_opt = matches.value_of("remote");
 
     let mut file = match File::open(&config_path) {
