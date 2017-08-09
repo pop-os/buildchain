@@ -10,7 +10,7 @@
         ["wget", "https://sh.rustup.rs", "-O", "rustup.sh"],
         ["chmod", "+x", "rustup.sh"],
         ["./rustup.sh", "-y", "--default-toolchain", "nightly"],
-        ["bash", "-c", "source .cargo/env && cd source && buildchain.sh"],
-        ["cp source/target/sysroot.tar.xz artifacts/buildchain.tar.xz"]
+        ["bash", "-c", "source .cargo/env && cd source && ./buildchain.sh"],
+        ["cp", "source/target/sysroot.tar.xz", "artifacts/buildchain.tar.xz"]
     ]
 }

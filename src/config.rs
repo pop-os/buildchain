@@ -62,13 +62,8 @@ impl Config {
             container.exec(&["mkdir", "/root/artifacts"])?;
 
             for command in self.commands.iter() {
-                let mut replaced = vec![];
-                for arg in command.iter() {
-                    replaced.push(arg.replace("${BUILDCHAIN_TIME}", &time_str));
-                }
-
                 let mut args = vec![];
-                for arg in replaced.iter() {
+                for arg in command.iter() {
                     args.push(arg.as_str());
                 }
 
