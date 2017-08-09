@@ -6,7 +6,7 @@
         "url": "https://github.com/system76/buildchain.git"
     },
     "commands": [
-        ["apt-get", "install", "-y", "--no-install-recommends", "cmake", "gcc", "libssl-dev", "pkg-config"],
+        ["apt-get", "install", "-y", "cmake", "gcc", "libssl-dev", "pkg-config"],
         ["wget", "https://sh.rustup.rs", "-O", "rustup.sh"],
         ["chmod", "+x", "rustup.sh"],
         ["./rustup.sh", "-y", "--default-toolchain", "nightly"],

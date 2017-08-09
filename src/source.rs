@@ -1,13 +1,6 @@
-use git2::{self, Repository};
 use std::io;
 use std::path::Path;
-
-fn git_err(err: git2::Error) -> io::Error {
-    io::Error::new(
-        io::ErrorKind::Other,
-        format!("Git error: {}", err)
-    )
-}
+use std::process::{Command, Stdio};
 
 /// A source code repository
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
@@ -22,23 +15,53 @@ impl Source {
     pub fn download<P: AsRef<Path>>(&self, directory: P) -> io::Result<u64> {
         match self.kind.as_str() {
             "git" => {
-                let repo = Repository::clone(&self.url, directory).map_err(git_err)?;
+                let status = Command::new("git")
+                                    .arg("clone")
+                                    .arg("--recursive")
+                                    .arg(&self.url)
+                                    .arg(directory.as_ref())
+                                    .spawn()?
+                                    .wait()?;
 
-                let mut walk = repo.revwalk().map_err(git_err)?;
-                walk.set_sorting(git2::SORT_TIME);
-                walk.push_head().map_err(git_err)?;
-
-                if let Some(id_res) = walk.next() {
-                    let id = id_res.map_err(git_err)?;
-                    let commit = repo.find_commit(id).map_err(git_err)?;
-                    let time = commit.time();
-                    Ok(time.seconds() as u64)
-                } else {
-                    Err(io::Error::new(
+                if ! status.success() {
+                    return Err(io::Error::new(
                         io::ErrorKind::Other,
-                        format!("Git error: no commits found")
-                    ))
+                        format!("Git clone error: {}", status)
+                    ));
                 }
+
+                let output = Command::new("git")
+                        .arg("-C")
+                        .arg(directory.as_ref())
+                        .arg("log")
+                        .arg("-1")
+                        .arg("--format=%ct")
+                        .stdout(Stdio::piped())
+                        .spawn()?
+                        .wait_with_output()?;
+
+                if ! output.status.success() {
+                    return Err(io::Error::new(
+                        io::ErrorKind::Other,
+                        format!("Git log error: {}", output.status)
+                    ));
+                }
+
+                let stdout = String::from_utf8(output.stdout).map_err(|err| {
+                    io::Error::new(
+                        io::ErrorKind::Other,
+                        format!("Git log output not UTF-8: {}", err)
+                    )
+                })?;
+
+                let time = stdout.trim().parse::<u64>().map_err(|err| {
+                    io::Error::new(
+                        io::ErrorKind::Other,
+                        format!("Git log time not a number: {}", err)
+                    )
+                })?;
+
+                Ok(time)
             },
             _ => {
                 Err(io::Error::new(

@@ -1,7 +1,6 @@
 //! Buildchain creates and manages a distributed and reproducible chain of builds
 
 extern crate hex;
-extern crate git2;
 extern crate lxd;
 extern crate serde;
 #[macro_use]
