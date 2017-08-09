@@ -49,7 +49,6 @@ impl Config {
 
         println!("Download source using {}: {}", self.source.kind, self.source.url);
         let time = self.source.download(temp_dir.path().join("source"))?;
-        let time_str = format!("{}", time);
 
         {
             println!("Create container: {}", self.base);
