@@ -10,8 +10,7 @@
         ["wget", "https://sh.rustup.rs", "-O", "rustup.sh"],
         ["chmod", "+x", "rustup.sh"],
         ["./rustup.sh", "-y", "--default-toolchain", "nightly"],
-        ["mkdir", "sysroot"],
-        ["bash", "-c", "source .cargo/env && cargo install --path source --root sysroot"],
-        ["tar", "--create", "--mtime=@${BUILDCHAIN_TIME}", "--xz", "--file", "artifacts/buildchain.tar.xz", "--directory", "sysroot", "."]
+        ["bash", "-c", "source .cargo/env && cd source && buildchain.sh"],
+        ["cp source/target/sysroot.tar.xz artifacts/buildchain.tar.xz"]
     ]
 }
