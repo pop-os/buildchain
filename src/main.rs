@@ -85,7 +85,7 @@ fn main() {
 
     match File::create(temp_dir.join("manifest.json")) {
         Ok(mut file) => {
-            if let Err(err) = serde_json::to_writer(&mut file, &manifest) {
+            if let Err(err) = serde_json::to_writer_pretty(&mut file, &manifest) {
                 eprintln!("buildchain: failed to write manifest: {}", err);
                 process::exit(1)
             }
