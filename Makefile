@@ -29,4 +29,4 @@ vendor:
 	touch vendor
 
 target/release/buildchain: vendor
-	cargo build --frozen --locked --release
+	cargo build --frozen --release
