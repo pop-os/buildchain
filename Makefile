@@ -8,25 +8,37 @@ datadir = $(datarootdir)
 
 .PHONY: all clean distclean install uninstall update
 
-all: target/release/buildchain
+BIN=buildchain
+
+all: target/release/$(BIN)
 
 clean:
 	cargo clean
 
 distclean: clean
+	rm -rf .cargo vendor
 
 install: all
-	install -D -m 0755 "target/release/buildchain" "$(DESTDIR)$(bindir)/buildchain"
+	install -D -m 0755 "target/release/$(BIN)" "$(DESTDIR)$(bindir)/$(BIN)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(bindir)/buildchain"
+	rm -f "$(DESTDIR)$(bindir)/$(BIN)"
 
 update:
 	cargo update
 
-vendor:
+.cargo/config: vendor_config
+	mkdir -p .cargo
+	cp $< $@
+
+vendor: .cargo/config
 	cargo vendor
 	touch vendor
 
-target/release/buildchain: vendor
-	cargo build --frozen --release
+target/release/$(BIN):
+	if [ -d vendor ]; \
+	then \
+		cargo build --release --frozen; \
+	else \
+		cargo build --release; \
+	fi
