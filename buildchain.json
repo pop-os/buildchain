@@ -3,14 +3,18 @@
     "base": "ubuntu:16.04",
     "source": {
         "kind": "git",
-        "url": "https://github.com/system76/buildchain.git"
+        "url": "."
     },
-    "commands": [
+    "prepare": [
         ["apt-get", "install", "-y", "cmake", "gcc", "libssl-dev", "pkg-config"],
         ["wget", "https://sh.rustup.rs", "-O", "rustup.sh"],
         ["chmod", "+x", "rustup.sh"],
-        ["./rustup.sh", "-y", "--default-toolchain", "nightly"],
-        ["bash", "-c", "source .cargo/env && cd source && ./buildchain.sh"],
+        ["./rustup.sh", "-y", "--default-toolchain", "nightly"]
+    ],
+    "build": [
+        ["bash", "-c", "source .cargo/env && cd source && ./buildchain.sh"]
+    ],
+    "publish": [
         ["cp", "source/target/sysroot.tar.xz", "artifacts/buildchain.tar.xz"]
     ]
 }

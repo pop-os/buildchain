@@ -35,7 +35,7 @@ fn main() {
         Ok(file) => file,
         Err(err) => {
             eprintln!("buildchain: failed to open {}: {}", config_path, err);
-            process::exit(1)
+            process::exit(1);
         }
     };
 
@@ -44,7 +44,7 @@ fn main() {
         Ok(_) => (),
         Err(err) => {
             eprintln!("buildchain: failed to read {}: {}", config_path, err);
-            process::exit(1)
+            process::exit(1);
         }
     }
 
@@ -52,7 +52,7 @@ fn main() {
         Ok(config) => config,
         Err(err) => {
             eprintln!("buildchain: failed to parse {}: {}", config_path, err);
-            process::exit(1)
+            process::exit(1);
         }
     };
 
@@ -68,35 +68,37 @@ fn main() {
         Ok(t) => t,
         Err(err) => {
             eprintln!("buildchain: failed to run {}: {}", config_path, err);
-            process::exit(1)
+            process::exit(1);
         }
     };
 
-    println!("{}", temp_dir.display());
-    let manifest = match Manifest::new(time, temp_dir.join("artifacts")) {
+    println!("{}", temp_dir.path().display());
+    let manifest = match Manifest::new(time, temp_dir.path().join("artifacts")) {
         Ok(manifest) => manifest,
         Err(err) => {
             eprintln!("buildchain: failed to generate manifest: {}", err);
-            process::exit(1)
+            process::exit(1);
         }
     };
 
     println!("{:?}", manifest);
 
-    match File::create(temp_dir.join("manifest.json")) {
+    match File::create(temp_dir.path().join("manifest.json")) {
         Ok(mut file) => {
             if let Err(err) = serde_json::to_writer_pretty(&mut file, &manifest) {
                 eprintln!("buildchain: failed to write manifest: {}", err);
-                process::exit(1)
+                process::exit(1);
             }
             if let Err(err) = file.sync_all() {
                 eprintln!("buildchain: failed to sync manifest: {}", err);
-                process::exit(1)
+                process::exit(1);
             }
         },
         Err(err) => {
             eprintln!("buildchain: failed to create manifest: {}", err);
-            process::exit(1)
+            process::exit(1);
         }
     }
+
+    println!("TODO: copy and remove {}", temp_dir.into_path().display());
 }
