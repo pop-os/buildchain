@@ -12,9 +12,9 @@
         ["./rustup.sh", "-y", "--default-toolchain", "nightly"]
     ],
     "build": [
-        ["bash", "-c", "source .cargo/env && cd source && ./buildchain.sh"]
+        ["bash", "-c", "source ~/.cargo/env && cd source && ./buildchain.sh"]
     ],
     "publish": [
-        ["cp", "source/target/sysroot.tar.xz", "artifacts/buildchain.tar.xz"]
+        ["mv", "source/target/sysroot.tar.xz", "artifacts/buildchain.tar.xz"]
     ]
 }
