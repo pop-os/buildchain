@@ -22,6 +22,15 @@ pub struct Config {
     pub publish: Vec<Vec<String>>,
 }
 
+/// A temporary structure used to generate a unique build environment
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+struct BuildEnvironmentConfig {
+    /// The LXC base to use
+    pub base: String,
+    /// The commands to run to generate a build environment
+    pub prepare: Vec<Vec<String>>,
+}
+
 impl Config {
     /// Run a build configuration
     ///
@@ -41,16 +50,19 @@ impl Config {
 
         let container_name = format!("buildchain-{}-{}", self.name, time);
 
-        let prepare_json = serde_json::to_string(&self.prepare).map_err(|err| {
+        let build_json = serde_json::to_string(&BuildEnvironmentConfig {
+            base: self.base.clone(),
+            prepare: self.prepare.clone(),
+        }).map_err(|err| {
             io::Error::new(io::ErrorKind::Other, err)
         })?;
-        let prepare_sha = Sha384::new(&mut prepare_json.as_bytes()).map_err(|err| {
+        let build_sha = Sha384::new(&mut build_json.as_bytes()).map_err(|err| {
             io::Error::new(io::ErrorKind::Other, err)
         })?;
-        let prepare_sha_str = serde_json::to_string(&prepare_sha).map_err(|err| {
+        let build_sha_str = serde_json::to_string(&build_sha).map_err(|err| {
             io::Error::new(io::ErrorKind::Other, err)
         })?;
-        let build_image = format!("buildchain-{}-{}", self.name, prepare_sha_str.trim_matches('"'));
+        let build_image = format!("buildchain-{}-{}", self.name, build_sha_str.trim_matches('"'));
 
         if Image::new(location.clone(), &build_image).is_ok() {
             println!("Build environment cached as {}", build_image);
