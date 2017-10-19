@@ -1,6 +1,6 @@
 [root]
 name = "buildchain"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "clap 2.26.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "hex 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -106,7 +106,7 @@ name = "generic-array"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "nodrop 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "nodrop 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "typenum 1.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -146,7 +146,7 @@ dependencies = [
 
 [[package]]
 name = "nodrop"
-version = "0.1.9"
+version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "odds 0.2.25 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -345,7 +345,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7507624b29483431c0ba2d82aece8ca6cdba9382bff4ddd0f7490560c056098d"
 "checksum libc 0.2.32 (registry+https://github.com/rust-lang/crates.io-index)" = "56cce3130fd040c28df6f495c8492e5ec5808fb4c9093c310df02b0c8f030148"
 "checksum lxd 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "6a59eea656a43c79dbddc7dd10c891d9fb5219bfcb15c868ffed832f8dd14a1c"
-"checksum nodrop 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)" = "52cd74cd09beba596430cc6e3091b74007169a56246e1262f0ba451ea95117b2"
+"checksum nodrop 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)" = "c20f62cbc112bb5beabe96e420b34b17cb627edb03039930a37351520efc69ee"
 "checksum num-traits 0.1.40 (registry+https://github.com/rust-lang/crates.io-index)" = "99843c856d68d8b4313b03a17e33c4bb42ae8f6610ea81b28abe076ac721b9b0"
 "checksum odds 0.2.25 (registry+https://github.com/rust-lang/crates.io-index)" = "c3df9b730298cea3a1c3faa90b7e2f9df3a9c400d0936d6015e6165734eefcba"
 "checksum quote 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)" = "7a6e920b65c65f10b2ae65c831a81a073a89edd28c7cce89475bff467ab4167a"
