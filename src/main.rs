@@ -4,7 +4,7 @@ extern crate serde_json;
 
 use buildchain::{Config, Location, Manifest, Source};
 use clap::{App, Arg};
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{self, Read, Write};
 use std::process;
 
@@ -34,7 +34,7 @@ fn buildchain() -> Result<(), String> {
                     .get_matches();
 
     let config_path = matches.value_of("config").unwrap_or("buildchain.json");
-    let _output_path = matches.value_of("output").unwrap_or("buildchain.out");
+    let output_path = matches.value_of("output").unwrap_or("buildchain.out");
     let remote_opt = matches.value_of("remote");
     let source_url = matches.value_of("source_url").unwrap_or(".");
     let source_kind = matches.value_of("source_kind").unwrap_or("dir");
@@ -89,8 +89,6 @@ fn buildchain() -> Result<(), String> {
         }
     };
 
-    println!("{:?}", manifest);
-
     match File::create(temp_dir.path().join("manifest.json")) {
         Ok(mut file) => {
             if let Err(err) = serde_json::to_writer_pretty(&mut file, &manifest) {
@@ -105,7 +103,15 @@ fn buildchain() -> Result<(), String> {
         }
     }
 
-    println!("TODO: copy and remove {}", temp_dir.into_path().display());
+    let temp_path = temp_dir.into_path();
+    match fs::rename(&temp_path, &output_path) {
+        Ok(()) => {
+            println!("buildchain: placed results in {}", output_path);
+        },
+        Err(err) => {
+            return Err(format!("failed to move temporary directory {}: {}", temp_path.display(), err));
+        }
+    }
 
     Ok(())
 }
