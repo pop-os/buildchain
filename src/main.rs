@@ -2,7 +2,7 @@ extern crate buildchain;
 extern crate clap;
 extern crate serde_json;
 
-use buildchain::{Config, Location, Manifest};
+use buildchain::{Config, Location, Manifest, Source};
 use clap::{App, Arg};
 use std::fs::File;
 use std::io::{self, Read, Write};
@@ -14,22 +14,35 @@ fn buildchain() -> Result<(), String> {
                             .short("c")
                             .long("config")
                             .takes_value(true)
-                            .help("Build configuration file"))
+                            .help("Configuration file"))
                     .arg(Arg::with_name("output")
                             .short("o")
                             .long("output")
                             .takes_value(true)
-                            .help("Build output directory"))
+                            .help("Output directory"))
                     .arg(Arg::with_name("remote")
                             .short("r")
                             .long("remote")
                             .takes_value(true)
                             .help("Name of remote LXC server"))
+                    .arg(Arg::with_name("source_url")
+                            .takes_value(true)
+                            .help("Source URL"))
+                    .arg(Arg::with_name("source_kind")
+                            .takes_value(true)
+                            .help("Source Kind (dir, git)"))
                     .get_matches();
 
     let config_path = matches.value_of("config").unwrap_or("buildchain.json");
     let _output_path = matches.value_of("output").unwrap_or("buildchain.out");
     let remote_opt = matches.value_of("remote");
+    let source_url = matches.value_of("source_url").unwrap_or(".");
+    let source_kind = matches.value_of("source_kind").unwrap_or("dir");
+
+    let source = Source {
+        kind: source_kind.to_string(),
+        url: source_url.to_string()
+    };
 
     let mut file = match File::open(&config_path) {
         Ok(file) => file,
@@ -61,7 +74,7 @@ fn buildchain() -> Result<(), String> {
         Location::Local
     };
 
-    let (time, temp_dir) = match config.run(location) {
+    let (time, temp_dir) = match config.run(source, location) {
         Ok(t) => t,
         Err(err) => {
             return Err(format!("failed to run {}: {}", config_path, err));

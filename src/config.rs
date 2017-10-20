@@ -12,8 +12,6 @@ pub struct Config {
     pub name: String,
     /// The LXC base to use
     pub base: String,
-    /// The source repository (git only, for now)
-    pub source: Source,
     /// The commands to run to generate a build environment
     pub prepare: Vec<Vec<String>>,
     /// The commands to run that build the artifacts in /root/source
@@ -41,12 +39,12 @@ impl Config {
     /// # Errors
     ///
     /// Errors that are encountered while running will be returned
-    pub fn run(&self, location: Location) -> io::Result<(u64, TempDir)> {
+    pub fn run(&self, source: Source, location: Location) -> io::Result<(u64, TempDir)> {
         println!("Create temporary directory");
         let temp_dir = TempDir::new("buildchain")?;
 
-        println!("Download source using {}: {}", self.source.kind, self.source.url);
-        let time = self.source.download(temp_dir.path().join("source"))?;
+        println!("Download source using {}: {}", source.kind, source.url);
+        let time = source.download(temp_dir.path().join("source"))?;
 
         let container_name = format!("buildchain-{}-{}", self.name, time);
 
