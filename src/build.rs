@@ -17,9 +17,7 @@ struct BuildEnvironmentConfig {
     pub prepare: Vec<Vec<String>>,
 }
 
-fn prepare(config: &Config, location: &Location, source_time: u64) -> io::Result<String> {
-    let container_name = format!("buildchain-{}-{}", config.name, source_time);
-
+fn prepare(config: &Config, location: &Location) -> io::Result<String> {
     let build_json = serde_json::to_string(&BuildEnvironmentConfig {
         base: config.base.clone(),
         prepare: config.prepare.clone(),
@@ -40,8 +38,8 @@ fn prepare(config: &Config, location: &Location, source_time: u64) -> io::Result
     if Image::new(location.clone(), &build_image).is_ok() {
         println!("Build environment cached as {}", build_image);
     } else {
-        println!("Create container {} from {}", container_name, config.base);
-        let mut container = Container::new(location.clone(), &container_name, &config.base)?;
+        println!("Create container {} from {}", build_image, config.base);
+        let mut container = Container::new(location.clone(), &build_image, &config.base)?;
 
         for command in config.prepare.iter() {
             let mut args = vec![];
@@ -63,9 +61,9 @@ fn prepare(config: &Config, location: &Location, source_time: u64) -> io::Result
     Ok(build_image)
 }
 
-fn run<P: AsRef<Path>, Q: AsRef<Path>>(config: &Config, location: &Location, build_image: &str, source_time: u64, source_path: P, artifacts_path: Q) -> io::Result<()> {
+fn run<P: AsRef<Path>, Q: AsRef<Path>>(config: &Config, location: &Location, build_image: &str, source_time: u64, source_path: P, temp_path: Q) -> io::Result<()> {
     let source_path = source_path.as_ref();
-    let artifacts_path = artifacts_path.as_ref();
+    let temp_path = temp_path.as_ref();
 
     let container_name = format!("buildchain-{}-{}", config.name, source_time);
 
@@ -73,7 +71,7 @@ fn run<P: AsRef<Path>, Q: AsRef<Path>>(config: &Config, location: &Location, bui
     let mut container = Container::new(location.clone(), &container_name, build_image)?;
 
     println!("Push source");
-    container.push(source_path, "/root/source", true)?;
+    container.push(source_path, "/root", true)?;
 
     for command in config.build.iter() {
         let mut args = Vec::new();
@@ -99,7 +97,7 @@ fn run<P: AsRef<Path>, Q: AsRef<Path>>(config: &Config, location: &Location, bui
     }
 
     println!("Pull artifacts");
-    container.pull("/root/artifacts", artifacts_path, true)?;
+    container.pull("/root/artifacts", temp_path, true)?;
 
     Ok(())
 }
@@ -128,7 +126,6 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
     };
 
     let source_path = temp_dir.path().join("source");
-    let artifacts_path = temp_dir.path().join("artifacts");
 
     let source_time = match source.download(&source_path) {
         Ok(time) => time,
@@ -167,14 +164,14 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
         Location::Local
     };
 
-    let build_image = match prepare(&config, &location, source_time) {
+    let build_image = match prepare(&config, &location) {
         Ok(build_image) => build_image,
         Err(err) => {
             return Err(format!("failed to prepare config {}: {}", config_path, err));
         }
     };
 
-    match run(&config, &location, &build_image, source_time, &source_path, &artifacts_path) {
+    match run(&config, &location, &build_image, source_time, &source_path, &temp_dir.path()) {
         Ok(()) => (),
         Err(err) => {
             return Err(format!("failed to run config {}: {}", config_path, err));
