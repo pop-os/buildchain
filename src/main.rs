@@ -24,7 +24,7 @@ fn buildchain() -> Result<(), String> {
                             .short("r")
                             .long("remote")
                             .takes_value(true)
-                            .help("Name of remote LXC server"))
+                            .help("Remote LXC server"))
                     .arg(Arg::with_name("source_url")
                             .takes_value(true)
                             .help("Source URL"))
