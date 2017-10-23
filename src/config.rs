@@ -5,6 +5,9 @@ pub struct Config {
     pub name: String,
     /// The LXC base to use
     pub base: String,
+    /// True if the LXC container for builds should be privileged
+    #[serde(default = "Default::default")]
+    pub privileged: bool,
     /// The commands to run to generate a build environment
     pub prepare: Vec<Vec<String>>,
     /// The commands to run that build the artifacts in /root/source

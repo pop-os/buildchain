@@ -67,8 +67,13 @@ fn run<P: AsRef<Path>, Q: AsRef<Path>>(config: &Config, location: &Location, bui
 
     let container_name = format!("buildchain-{}-{}", config.name, source_time);
 
-    println!("Create container {} from {}", container_name, build_image);
-    let mut container = Container::new(location.clone(), &container_name, build_image)?;
+    let mut container = if config.privileged {
+        println!("Create privileged container {} from {}", container_name, build_image);
+        unsafe { Container::new_privileged(location.clone(), &container_name, build_image)? }
+    } else {
+        println!("Create container {} from {}", container_name, build_image);
+        Container::new(location.clone(), &container_name, build_image)?
+    };
 
     println!("Push source");
     container.push(source_path, "/root", true)?;

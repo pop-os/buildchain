@@ -1,6 +1,6 @@
 [package]
 name = "buildchain"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Jeremy Soller <jackpot51@gmail.com>"]
 description = "Software for creating and managing a distributed and reproducible chain of builds"
 documentation = "https://docs.rs/buildchain"
@@ -20,7 +20,7 @@ doc = false
 [dependencies]
 clap = "2.26"
 hex = "0.2"
-lxd = "0.1"
+lxd = "0.1.6"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
