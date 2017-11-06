@@ -1,3 +1,9 @@
+buildchain (0.3.4) artful; urgency=medium
+
+  * 0.3.4 release
+
+ -- Jeremy Soller <jeremy@system76.com>  Mon, 06 Nov 2017 14:08:01 -0700
+
 buildchain (0.3.3) artful; urgency=medium
 
   * 0.3.3 release
