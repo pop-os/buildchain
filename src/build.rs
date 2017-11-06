@@ -33,13 +33,19 @@ fn prepare(config: &Config, location: &Location) -> io::Result<String> {
         io::Error::new(io::ErrorKind::Other, err)
     })?;
 
+    let container_name = format!("buildchain-{}-prepare", config.name);
     let build_image = format!("buildchain-{}-{}", config.name, build_sha_str.trim_matches('"'));
 
     if Image::new(location.clone(), &build_image).is_ok() {
         println!("Build environment cached as {}", build_image);
     } else {
-        println!("Create container {} from {}", build_image, config.base);
-        let mut container = Container::new(location.clone(), &build_image, &config.base)?;
+        let mut container = if config.privileged {
+            println!("Create privileged container {} from {}", container_name, &config.base);
+            unsafe { Container::new_privileged(location.clone(), &container_name, &config.base)? }
+        } else {
+            println!("Create container {} from {}", container_name, &config.base);
+            Container::new(location.clone(), &container_name, &config.base)?
+        };
 
         for command in config.prepare.iter() {
             let mut args = vec![];
@@ -61,11 +67,11 @@ fn prepare(config: &Config, location: &Location) -> io::Result<String> {
     Ok(build_image)
 }
 
-fn run<P: AsRef<Path>, Q: AsRef<Path>>(config: &Config, location: &Location, build_image: &str, source_time: u64, source_path: P, temp_path: Q) -> io::Result<()> {
+fn run<P: AsRef<Path>, Q: AsRef<Path>>(config: &Config, location: &Location, build_image: &str, source_path: P, temp_path: Q) -> io::Result<()> {
     let source_path = source_path.as_ref();
     let temp_path = temp_path.as_ref();
 
-    let container_name = format!("buildchain-{}-{}", config.name, source_time);
+    let container_name = format!("buildchain-{}-build", config.name);
 
     let mut container = if config.privileged {
         println!("Create privileged container {} from {}", container_name, build_image);
@@ -176,7 +182,7 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
         }
     };
 
-    match run(&config, &location, &build_image, source_time, &source_path, &temp_dir.path()) {
+    match run(&config, &location, &build_image, &source_path, &temp_dir.path()) {
         Ok(()) => (),
         Err(err) => {
             return Err(format!("failed to run config {}: {}", config_path, err));
