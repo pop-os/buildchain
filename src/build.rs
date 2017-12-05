@@ -5,6 +5,7 @@ use std::path::Path;
 use lxd::{Container, Image, Location};
 use serde_json;
 use tempdir::TempDir;
+use plain;
 
 use {Config, Manifest, Sha384, Source};
 use pihsm::Response;
@@ -225,6 +226,20 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
         }
     };
     response.dump();
+    let response_bytes = unsafe { plain::as_bytes(&response) };
+    match File::create(temp_dir.path().join("pihsm.signature")) {
+        Ok(mut file) => {
+            if let Err(err) = file.write_all(&response_bytes) {
+                return Err(format!("failed to write signature: {}", err));
+            }
+            if let Err(err) = file.sync_all() {
+                return Err(format!("failed to sync signature: {}", err));
+            }
+        },
+        Err(err) => {
+            return Err(format!("failed to create signature: {}", err));
+        }
+    }
 
     let temp_path = temp_dir.into_path();
     match fs::rename(&temp_path, &args.output_path) {

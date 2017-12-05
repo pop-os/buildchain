@@ -49,6 +49,7 @@ impl Response {
             }
             {
                 let bytes = unsafe { plain::as_mut_bytes(&mut response) };
+                assert!(plain::is_aligned::<Response>(bytes));
                 let stdout = child.stdout.as_mut().expect("failed to get stdout");
                 if stdout.read(bytes)? != bytes.len() {
                     panic!("not enough data");
