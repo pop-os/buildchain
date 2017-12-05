@@ -1,0 +1,14 @@
+{
+    "name": "example",
+    "base": "ubuntu:16.04",
+    "prepare": [
+        ["echo prepare"]
+    ],
+    "build": [
+        ["echo build"]
+    ],
+    "publish": [
+        ["echo", "publish"],
+        ["touch", "artifacts/example"]
+    ]
+}
