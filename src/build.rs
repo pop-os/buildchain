@@ -1,5 +1,5 @@
 use std::fs::{self, File};
-use std::io::{self, Read};
+use std::io::{self, Read, Write};
 use std::path::Path;
 
 use lxd::{Container, Image, Location};
@@ -7,6 +7,7 @@ use serde_json;
 use tempdir::TempDir;
 
 use {Config, Manifest, Sha384, Source};
+use pihsm::Response;
 
 /// A temporary structure used to generate a unique build environment
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
@@ -196,9 +197,16 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
         }
     };
 
+    let manifest_bytes = match serde_json::to_vec_pretty(&manifest) {
+        Ok(bytes) => bytes,
+        Err(err) => {
+            return Err(format!("failed to serialize manifest: {}", err));
+        }
+    };
+    
     match File::create(temp_dir.path().join("manifest.json")) {
         Ok(mut file) => {
-            if let Err(err) = serde_json::to_writer_pretty(&mut file, &manifest) {
+            if let Err(err) = file.write_all(&manifest_bytes) {
                 return Err(format!("failed to write manifest: {}", err));
             }
             if let Err(err) = file.sync_all() {
@@ -209,6 +217,13 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
             return Err(format!("failed to create manifest: {}", err));
         }
     }
+    
+    let response = match Response::request(&manifest_bytes) {
+        Ok(response) => response,
+        Err(err) => {
+            return Err(format!("failed to sign manifest: {}", err));
+        }
+    };
 
     let temp_path = temp_dir.into_path();
     match fs::rename(&temp_path, &args.output_path) {

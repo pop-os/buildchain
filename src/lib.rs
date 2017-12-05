@@ -2,6 +2,7 @@
 
 extern crate hex;
 extern crate lxd;
+extern crate plain;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -19,5 +20,6 @@ pub use self::source::Source;
 mod build;
 mod config;
 mod manifest;
+mod pihsm;
 mod sha384;
 mod source;
