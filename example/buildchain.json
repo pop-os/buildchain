@@ -2,10 +2,10 @@
     "name": "example",
     "base": "ubuntu:16.04",
     "prepare": [
-        ["echo prepare"]
+        ["echo", "prepare"]
     ],
     "build": [
-        ["echo build"]
+        ["echo", "build"]
     ],
     "publish": [
         ["echo", "publish"],
