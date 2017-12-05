@@ -224,6 +224,7 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
             return Err(format!("failed to sign manifest: {}", err));
         }
     };
+    response.dump();
 
     let temp_path = temp_dir.into_path();
     match fs::rename(&temp_path, &args.output_path) {

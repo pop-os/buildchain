@@ -36,19 +36,17 @@ impl Response {
 
     pub fn request(data: &[u8]) -> io::Result<Response> {
         let mut response = Response::new();
-
         {
+            println!("calling pihsm-request...");
             let mut child = Command::new("/usr/bin/pihsm-request")
                 .stdin(Stdio::piped())
                 .stdout(Stdio::piped())
                 .spawn()?;
-
             {
-                // limited borrow of stdin
-                let stdin = child.stdin.as_mut().expect("failed to get stdin");
-                stdin.write_all(data).expect("failed to write to stdin");
+                let mut stdin = child.stdin.take().expect("failed to get stdin");
+                stdin.write_all(data)?;
+                stdin.flush()?;
             }
-            
             {
                 let bytes = unsafe { plain::as_mut_bytes(&mut response) };
                 let stdout = child.stdout.as_mut().expect("failed to get stdout");
@@ -57,10 +55,8 @@ impl Response {
                     // TODO: Error, not enough data
                 }
             }
-
             child.wait()?;
         }
-
         Ok(response)
     }
 
