@@ -1,6 +1,7 @@
-use std::fs::{self, File};
+use std::fs::File;
 use std::io::{self, Read, Write};
 use std::path::Path;
+use std::process::Command;
 
 use lxd::{Container, Image, Location};
 use serde_json;
@@ -115,6 +116,32 @@ fn run<P: AsRef<Path>, Q: AsRef<Path>>(config: &Config, location: &Location, bui
     Ok(())
 }
 
+fn archive<P: AsRef<Path>, Q: AsRef<Path>>(source_path: P, dest_path: Q) -> io::Result<()> {
+    let source_path = source_path.as_ref();
+    let dest_path = dest_path.as_ref();
+
+    let status = Command::new("tar")
+        .arg("--create")
+        .arg("--verbose")
+        .arg("--sort=name")
+        .arg("--owner=0")
+        .arg("--group=0")
+        .arg("--numeric-owner")
+        .arg("--file").arg(dest_path)
+        .arg("--directory").arg(source_path)
+        .arg(".")
+        .status()?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(io::Error::new(
+            io::ErrorKind::Other,
+            format!("tar failed with status: {}", status)
+        ))
+    }
+}
+
 pub struct BuildArguments<'a> {
     pub config_path: &'a str,
     pub output_path: &'a str,
@@ -204,7 +231,7 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
             return Err(format!("failed to serialize manifest: {}", err));
         }
     };
-    
+
     match File::create(temp_dir.path().join("manifest.json")) {
         Ok(mut file) => {
             if let Err(err) = file.write_all(&manifest_bytes) {
@@ -241,13 +268,12 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
         }
     }
 
-    let temp_path = temp_dir.into_path();
-    match fs::rename(&temp_path, &args.output_path) {
+    match archive(&temp_dir, &args.output_path) {
         Ok(()) => {
             println!("buildchain: placed results in {}", args.output_path);
         },
         Err(err) => {
-            return Err(format!("failed to move temporary directory {}: {}", temp_path.display(), err));
+            return Err(format!("failed to move temporary directory {}: {}", temp_dir.as_ref().display(), err));
         }
     }
 

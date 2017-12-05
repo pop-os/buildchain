@@ -48,7 +48,7 @@ fn buildchain() -> Result<(), String> {
     if let Some(matches) = matches.subcommand_matches("build") {
         build(BuildArguments {
             config_path: matches.value_of("config").unwrap_or("buildchain.json"),
-            output_path: matches.value_of("output").unwrap_or("buildchain.out"),
+            output_path: matches.value_of("output").unwrap_or("buildchain.tar"),
             remote_opt: matches.value_of("remote"),
             source_url: matches.value_of("source_url").unwrap_or("."),
             source_kind: matches.value_of("source_kind").unwrap_or("dir"),

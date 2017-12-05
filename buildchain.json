@@ -2,7 +2,8 @@
     "name": "buildchain",
     "base": "ubuntu:16.04",
     "prepare": [
-	["apt-get", "update"],
+        ["apt-get", "update"],
+        ["apt-get", "dist-upgrade", "-y"],
         ["apt-get", "install", "-y", "cmake", "gcc", "libssl-dev", "pkg-config"],
         ["wget", "https://sh.rustup.rs", "-O", "rustup.sh"],
         ["chmod", "+x", "rustup.sh"],
