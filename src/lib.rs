@@ -2,7 +2,6 @@
 
 extern crate hex;
 extern crate lxd;
-extern crate plain;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
