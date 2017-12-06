@@ -19,5 +19,6 @@ pub use self::source::Source;
 mod build;
 mod config;
 mod manifest;
+mod pihsm;
 mod sha384;
 mod source;
