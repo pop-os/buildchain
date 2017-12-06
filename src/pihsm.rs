@@ -18,7 +18,10 @@ pub fn sign_manifest(manifest: &[u8]) -> io::Result<[u8; 400]> {
             let stdout = child.stdout.as_mut().expect("failed to get stdout");
             let bytes = stdout.read(&mut response)?;
             if bytes != response.len() {
-                panic!("pihsm-request: expected {} bytes, got {}", response.len(), bytes);
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("pihsm-request: expected {} bytes, got {}", response.len(), bytes)
+                ));
             }
         }
         child.wait()?;
