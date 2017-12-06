@@ -76,7 +76,7 @@ unsafe impl Plain for Response {}
 pub fn sign_manifest(manifest: &[u8]) -> io::Result<[u8; 400]> {
     let mut response = [0u8; 400];
     {
-        println!("calling pihsm-request...");
+        println!("Calling pihsm-request to sign manifest...");
         let mut child = Command::new("/usr/bin/pihsm-request")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -93,7 +93,7 @@ pub fn sign_manifest(manifest: &[u8]) -> io::Result<[u8; 400]> {
             }
         }
         child.wait()?;
-        println!("call to pihsm-request succeed.");
+        println!("Successfully signed manifest with pihsm-request.");
     }
     Ok(response)
 }

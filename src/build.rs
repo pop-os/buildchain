@@ -6,10 +6,9 @@ use std::process::Command;
 use lxd::{Container, Image, Location};
 use serde_json;
 use tempdir::TempDir;
-use plain;
 
 use {Config, Manifest, Sha384, Source};
-use pihsm::Response;
+use pihsm::sign_manifest;
 
 /// A temporary structure used to generate a unique build environment
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
@@ -245,18 +244,16 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
             return Err(format!("failed to create manifest: {}", err));
         }
     }
-    
-    let response = match Response::request(&manifest_bytes) {
+
+    let response = match sign_manifest(&manifest_bytes) {
         Ok(response) => response,
         Err(err) => {
             return Err(format!("failed to sign manifest: {}", err));
         }
     };
-    response.dump();
-    let response_bytes = unsafe { plain::as_bytes(&response) };
     match File::create(temp_dir.path().join("pihsm.signature")) {
         Ok(mut file) => {
-            if let Err(err) = file.write_all(&response_bytes) {
+            if let Err(err) = file.write_all(&response) {
                 return Err(format!("failed to write signature: {}", err));
             }
             if let Err(err) = file.sync_all() {
