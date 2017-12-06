@@ -72,6 +72,34 @@ impl Response {
 
 unsafe impl Plain for Response {}
 
+
+pub fn sign_manifest(manifest: &[u8]) -> io::Result<[u8; 400]> {
+    let mut response = [0u8; 400];
+    {
+        println!("calling pihsm-request...");
+        let mut child = Command::new("/usr/bin/pihsm-request")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()?;
+        {
+            let mut stdin = child.stdin.take().expect("failed to get stdin");
+            stdin.write_all(manifest)?;
+            stdin.flush()?;
+        }
+        {
+            let stdout = child.stdout.as_mut().expect("failed to get stdout");
+            if stdout.read(&mut response)? != response.len() {
+                panic!("not enough data");
+            }
+        }
+        child.wait()?;
+        println!("call to pihsm-request succeed.");
+    }
+    Ok(response)
+}
+
+
+
 #[cfg(test)]
 mod tests {
     use std::mem;
