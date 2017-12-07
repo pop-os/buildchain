@@ -12,6 +12,12 @@ fn buildchain() -> Result<(), String> {
             SubCommand::with_name("build")
                 .about("Build a buildchain project")
                 .arg(
+                    Arg::with_name("pihsm")
+                        .short("p")
+                        .long("pihsm")
+                        .help("Sign manifest with PiHSM")
+                )
+                .arg(
                     Arg::with_name("config")
                         .short("c")
                         .long("config")
