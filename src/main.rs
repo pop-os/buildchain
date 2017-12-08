@@ -12,6 +12,12 @@ fn buildchain() -> Result<(), String> {
             SubCommand::with_name("build")
                 .about("Build a buildchain project")
                 .arg(
+                    Arg::with_name("use_pihsm")
+                        .short("p")
+                        .long("pihsm")
+                        .help("Sign manifest with PiHSM")
+                )
+                .arg(
                     Arg::with_name("config")
                         .short("c")
                         .long("config")
@@ -52,6 +58,7 @@ fn buildchain() -> Result<(), String> {
             remote_opt: matches.value_of("remote"),
             source_url: matches.value_of("source_url").unwrap_or("."),
             source_kind: matches.value_of("source_kind").unwrap_or("dir"),
+            use_pihsm: matches.is_present("use_pihsm"),
         })
     } else {
         Err(format!("no subcommand provided"))
