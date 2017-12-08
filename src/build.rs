@@ -147,6 +147,7 @@ pub struct BuildArguments<'a> {
     pub remote_opt: Option<&'a str>,
     pub source_url: &'a str,
     pub source_kind: &'a str,
+    pub use_pihsm: bool,
 }
 
 pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
@@ -245,23 +246,25 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
         }
     }
 
-    let response = match sign_manifest(&manifest_bytes) {
-        Ok(response) => response,
-        Err(err) => {
-            return Err(format!("failed to sign manifest: {}", err));
-        }
-    };
-    match File::create(temp_dir.path().join("pihsm.signature")) {
-        Ok(mut file) => {
-            if let Err(err) = file.write_all(&response) {
-                return Err(format!("failed to write signature: {}", err));
+    if args.use_pihsm {
+        let response = match sign_manifest(&manifest_bytes) {
+            Ok(response) => response,
+            Err(err) => {
+                return Err(format!("failed to sign manifest: {}", err));
             }
-            if let Err(err) = file.sync_all() {
-                return Err(format!("failed to sync signature: {}", err));
+        };
+        match File::create(temp_dir.path().join("pihsm.signature")) {
+            Ok(mut file) => {
+                if let Err(err) = file.write_all(&response) {
+                    return Err(format!("failed to write signature: {}", err));
+                }
+                if let Err(err) = file.sync_all() {
+                    return Err(format!("failed to sync signature: {}", err));
+                }
+            },
+            Err(err) => {
+                return Err(format!("failed to create signature: {}", err));
             }
-        },
-        Err(err) => {
-            return Err(format!("failed to create signature: {}", err));
         }
     }
 
