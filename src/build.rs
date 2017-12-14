@@ -150,6 +150,24 @@ pub struct BuildArguments<'a> {
     pub use_pihsm: bool,
 }
 
+fn write_tempfile(temp_dir: &TempDir, name: &str, data: &[u8]) -> Result<(), String> {
+
+    match File::create(temp_dir.path().join(name)) {
+        Ok(mut file) => {
+            if let Err(err) = file.write_all(&data) {
+                return Err(format!("failed to write {}: {}", name, err));
+            }
+            if let Err(err) = file.sync_all() {
+                return Err(format!("failed to sync {}: {}", name, err));
+            }
+        },
+        Err(err) => {
+            return Err(format!("failed to create {}: {}", name, err));
+        }
+    }
+    Ok(())
+}
+
 pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
     let config_path = args.config_path;
 
@@ -224,25 +242,16 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
             return Err(format!("failed to generate manifest: {}", err));
         }
     };
-
     let manifest_bytes = match serde_json::to_vec_pretty(&manifest) {
         Ok(bytes) => bytes,
         Err(err) => {
             return Err(format!("failed to serialize manifest: {}", err));
         }
     };
-
-    match File::create(temp_dir.path().join("manifest.json")) {
-        Ok(mut file) => {
-            if let Err(err) = file.write_all(&manifest_bytes) {
-                return Err(format!("failed to write manifest: {}", err));
-            }
-            if let Err(err) = file.sync_all() {
-                return Err(format!("failed to sync manifest: {}", err));
-            }
-        },
+    match write_tempfile(&temp_dir, "manifest.json", &manifest_bytes) {
+        Ok(()) => (),
         Err(err) => {
-            return Err(format!("failed to create manifest: {}", err));
+            return Err(err);
         }
     }
 
@@ -253,17 +262,10 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
                 return Err(format!("failed to sign manifest: {}", err));
             }
         };
-        match File::create(temp_dir.path().join("pihsm.signature")) {
-            Ok(mut file) => {
-                if let Err(err) = file.write_all(&response) {
-                    return Err(format!("failed to write signature: {}", err));
-                }
-                if let Err(err) = file.sync_all() {
-                    return Err(format!("failed to sync signature: {}", err));
-                }
-            },
+        match write_tempfile(&temp_dir, "pihsm.signature", &response) {
+            Ok(()) => (),
             Err(err) => {
-                return Err(format!("failed to create signature: {}", err));
+                return Err(err);
             }
         }
     }
