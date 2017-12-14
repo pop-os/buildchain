@@ -22,3 +22,4 @@ mod manifest;
 mod pihsm;
 mod sha384;
 mod source;
+mod store;

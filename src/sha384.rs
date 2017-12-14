@@ -1,4 +1,4 @@
-use hex::{FromHex, ToHex};
+use hex::{self,FromHex};
 use serde::{Serializer, Deserializer, Deserialize};
 use sha2::{self, Digest};
 use std::io::{self, Read};
@@ -15,7 +15,7 @@ fn from_hex<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<u8>, D::Er
 
 /// Serializes `buffer` to a lowercase hex string.
 fn to_hex<T: AsRef<[u8]>, S: Serializer>(buffer: &T, serializer: S) -> Result<S::Ok, S::Error> {
-    serializer.serialize_str(&buffer.as_ref().to_hex())
+    serializer.serialize_str(&hex::encode(&buffer.as_ref()))
 }
 
 /// A serializable representation of a Sha384 hash

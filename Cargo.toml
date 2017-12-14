@@ -19,7 +19,7 @@ doc = false
 
 [dependencies]
 clap = "2.26"
-hex = "0.2"
+hex = "0.3"
 lxd = "0.1.7"
 serde = "1.0"
 serde_derive = "1.0"
