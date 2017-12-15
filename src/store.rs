@@ -28,7 +28,7 @@ impl Store {
     }
 
     pub fn sig_path2(&self, sig: &[u8; 400]) -> PathBuf {
-        return self.path2(&sig[0..64]);
+        return self.path2(sig);
     }
 }
 
