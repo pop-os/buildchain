@@ -151,7 +151,6 @@ pub struct BuildArguments<'a> {
 }
 
 fn write_tempfile(temp_dir: &TempDir, name: &str, data: &[u8]) -> Result<(), String> {
-
     match File::create(temp_dir.path().join(name)) {
         Ok(mut file) => {
             if let Err(err) = file.write_all(&data) {
