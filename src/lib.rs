@@ -3,6 +3,7 @@
 extern crate base32;
 extern crate hex;
 extern crate lxd;
+extern crate rand;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
