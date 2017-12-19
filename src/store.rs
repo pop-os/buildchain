@@ -1,9 +1,12 @@
 use std::path::{Path, PathBuf};
 use std::fs::create_dir;
 use std::result::Result;
+use sha2::{Sha384, Digest};
 use hex;
 use base32::{self, Alphabet};
 use rand::{Rng, OsRng};
+use generic_array::GenericArray;
+use generic_array::typenum::U48;
 
 const ALPHABET: Alphabet = Alphabet::RFC4648{padding:false};
 const RFC4648_ALPHABET: &'static [u8; 32] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
@@ -70,6 +73,11 @@ impl Store {
             }
         }
     }
+
+    pub fn write(&self, content: &[u8]) -> GenericArray<u8, U48> {
+        let digest = Sha384::digest(content);
+        digest
+    }
 }
 
 
@@ -101,7 +109,7 @@ mod tests {
         assert_ne!(p1, p2);
         assert_ne!(p1.to_str().unwrap(), p2.to_str().unwrap());
         assert_eq!(p1.to_str().unwrap()[..10], p2.to_str().unwrap()[..10]);
-        assert_nq!(p1.to_str().unwrap()[10..], p2.to_str().unwrap()[10..]);
+        assert_ne!(p1.to_str().unwrap()[10..], p2.to_str().unwrap()[10..]);
     }
 
     #[test]

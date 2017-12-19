@@ -1,6 +1,7 @@
 //! Buildchain creates and manages a distributed and reproducible chain of builds
 
 extern crate base32;
+extern crate generic_array;
 extern crate hex;
 extern crate lxd;
 extern crate rand;
