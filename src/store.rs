@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
-use std::fs::create_dir;
+use std::fs::{File, create_dir, rename};
+use std::io::Write;
 use std::result::Result;
 use sha2::{Sha384, Digest};
 use hex;
@@ -60,8 +61,8 @@ impl Store {
     }
 
     pub fn init_dirs(&self) {
+        create_dir(self.basedir.join("tmp").as_path()).unwrap();
         let mut ab  = [0u8; 2];
-        let mut count: usize = 0;
         for a in RFC4648_ALPHABET.iter() {
             ab[0] = *a;
             for b in RFC4648_ALPHABET.iter() {
@@ -72,11 +73,33 @@ impl Store {
         }
     }
 
-    pub fn write_object(&self, content: &[u8]) -> [u8; 48] {
-        let mut ret = [0; 48];
+    pub fn write_object(&self, content: &[u8]) -> Result<[u8; 48], String> {
+        let mut key = [0; 48];
         let digest = Sha384::digest(content);
-        ret.copy_from_slice(digest.as_slice());
-        ret
+        key.copy_from_slice(digest.as_slice());
+
+        let tmp = self.temp_path();
+        let dst = self.path_2(&key[..]);
+
+        println!("tmp: {:?}", tmp.as_path());
+        println!("dst: {:?}", dst.as_path());
+        match File::create(tmp.as_path()) {
+            Ok(mut file) => {
+                if let Err(err) = file.write_all(&content) {
+                    return Err(format!("failed to write: {}", err));
+                }
+                if let Err(err) = file.sync_all() {
+                    return Err(format!("failed to sync: {}", err));
+                }
+            },
+            Err(err) => {
+                return Err(format!("failed to create: {}", err));
+            }
+        }
+        if let Err(err) = rename(tmp.as_path(), dst.as_path()) {
+            return Err(format!("failed to rename {:?} -> {:?}", tmp.as_path(), dst.as_path()));
+        }
+        Ok(key)
     }
 }
 
@@ -86,6 +109,8 @@ mod tests {
     use std::path::Path;
     use tempdir::TempDir;
     use std::fs::read_dir;
+    use rand::{Rng, OsRng};
+
     use super::{Store};
 
     #[test]
@@ -186,7 +211,27 @@ mod tests {
         for entry in read_dir(temp_dir.path()).unwrap() {
             count += 1;
         }
-        assert_eq!(count, 1024);
+        assert_eq!(count, 1025);
+        temp_dir.close().unwrap();
+    }
+
+    #[test]
+    fn test_write_object() {
+        let temp_dir = TempDir::new("buildchain-test").unwrap();
+        let store = Store::new(temp_dir.path());
+        store.init_dirs();
+
+        let mut rng = match OsRng::new() {
+            Ok(g) => g,
+            Err(e) => panic!("Failed to obtain OsRng: {}", e),
+        };
+        let mut content = [0u8; 1776];
+        rng.fill_bytes(&mut content);
+        let digest: [u8; 48] = match store.write_object(&content) {
+            Ok(g) => g,
+            Err(e) => panic!("Error: {}", e),
+        };
+
         temp_dir.close().unwrap();
     }
 }
