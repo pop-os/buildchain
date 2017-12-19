@@ -5,8 +5,6 @@ use sha2::{Sha384, Digest};
 use hex;
 use base32::{self, Alphabet};
 use rand::{Rng, OsRng};
-use generic_array::GenericArray;
-use generic_array::typenum::U48;
 
 const ALPHABET: Alphabet = Alphabet::RFC4648{padding:false};
 const RFC4648_ALPHABET: &'static [u8; 32] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
@@ -74,9 +72,11 @@ impl Store {
         }
     }
 
-    pub fn write(&self, content: &[u8]) -> GenericArray<u8, U48> {
+    pub fn write_object(&self, content: &[u8]) -> [u8; 48] {
+        let mut ret = [0; 48];
         let digest = Sha384::digest(content);
-        digest
+        ret.copy_from_slice(digest.as_slice());
+        ret
     }
 }
 
