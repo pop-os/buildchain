@@ -1,6 +1,7 @@
-use std::path::{Path, PathBuf};
-use std::fs::{File, create_dir, rename};
+use std::fs::{OpenOptions, create_dir, rename};
 use std::io::Write;
+use std::os::unix::fs::OpenOptionsExt;
+use std::path::{Path, PathBuf};
 use std::result::Result;
 use sha2::{Sha384, Digest};
 use hex;
@@ -80,28 +81,47 @@ impl Store {
 
         let tmp = self.temp_path();
         let dst = self.path_2(&key[..]);
+        {
+            let mut file = OpenOptions::new()
+                .create_new(true)
+                .mode(0o400)
+                .write(true)
+                .open(tmp.as_path())
+            .map_err(|err| {
+                format!("failed to create file {:?}: {}", tmp.as_path(), err)
+            })?;
 
-        println!("tmp: {:?}", tmp.as_path());
-        println!("dst: {:?}", dst.as_path());
-        match File::create(tmp.as_path()) {
-            Ok(mut file) => {
-                let mut perm = file.metadata().unwrap().permissions();
+            {
+                let mut perm = file.metadata().map_err(|err| {
+                    format!("failed to get metadata {:?} : {}", tmp.as_path(), err)
+                })?.permissions();
                 perm.set_readonly(true);
-                file.set_permissions(perm).unwrap();
-                if let Err(err) = file.write_all(&content) {
-                    return Err(format!("failed to write: {}", err));
-                }
-                if let Err(err) = file.sync_all() {
-                    return Err(format!("failed to sync: {}", err));
-                }
-            },
-            Err(err) => {
-                return Err(format!("failed to create: {}", err));
+                file.set_permissions(perm).map_err(|err| {
+                    format!("failed to set metadata {:?}: {}", tmp.as_path(), err)
+                })?;
+            }
+
+            file.write_all(&content).map_err(|err| {
+                format!("failed to write {:?}: {}", tmp.as_path(), err)
+            })?;
+            file.sync_all().map_err(|err| {
+                format!("failed to sync {:?}: {}", tmp.as_path(), err)
+            })?;
+        }
+
+        {
+            let parent = dst.as_path().parent().unwrap();
+            if ! parent.is_dir() {
+                create_dir(parent).map_err(|err| {
+                    format!("failed to create {:?}: {}", parent, err)
+                })?;
             }
         }
-        if let Err(err) = rename(tmp.as_path(), dst.as_path()) {
-            return Err(format!("failed to rename {:?} -> {:?}", tmp.as_path(), dst.as_path()));
-        }
+
+        rename(tmp.as_path(), dst.as_path()).map_err(|err| {
+            format!("failed to rename {:?} -> {:?}: {}", tmp.as_path(), dst.as_path(), err)
+        })?;
+
         Ok(key)
     }
 }
