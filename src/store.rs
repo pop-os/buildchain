@@ -1,12 +1,12 @@
-use std::fs::{OpenOptions, create_dir, rename};
-use std::io::Write;
-use std::os::unix::fs::OpenOptionsExt;
+use std::fs::{File, OpenOptions, create_dir, rename};
+use std::io::{self, Write, Read};
+use std::os::unix::fs::{OpenOptionsExt,PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::result::Result;
-use sha2::{Sha384, Digest};
-use hex;
+
 use base32::{self, Alphabet};
 use rand::{Rng, OsRng};
+use sha2::{Sha384, Digest};
 
 const ALPHABET: Alphabet = Alphabet::RFC4648{padding:false};
 const RFC4648_ALPHABET: &'static [u8; 32] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
@@ -49,14 +49,6 @@ impl Store {
         self.basedir.join(relpath_2(key))
     }
 
-    pub fn path(&self, key: &[u8]) -> PathBuf {
-        return self.basedir.join(hex::encode(key));
-    }
-
-    pub fn sig_path(&self, sig: &[u8; 400]) -> PathBuf {
-        return self.path(&sig[0..64]);
-    }
-
     pub fn sig_path_2(&self, sig: &[u8; 400]) -> PathBuf {
         return self.path_2(&sig[0..64]);
     }
@@ -72,6 +64,10 @@ impl Store {
                 create_dir(self.basedir.join(name).as_path()).unwrap();
             }
         }
+    }
+
+    pub fn open_object(&self, key: &[u8; 48]) -> io::Result<File> {
+        File::open(self.path_2(&key[..]))
     }
 
     pub fn write_object(&self, content: &[u8]) -> Result<[u8; 48], String> {
@@ -90,16 +86,6 @@ impl Store {
             .map_err(|err| {
                 format!("failed to create file {:?}: {}", tmp.as_path(), err)
             })?;
-
-            {
-                let mut perm = file.metadata().map_err(|err| {
-                    format!("failed to get metadata {:?} : {}", tmp.as_path(), err)
-                })?.permissions();
-                perm.set_readonly(true);
-                file.set_permissions(perm).map_err(|err| {
-                    format!("failed to set metadata {:?}: {}", tmp.as_path(), err)
-                })?;
-            }
 
             file.write_all(&content).map_err(|err| {
                 format!("failed to write {:?}: {}", tmp.as_path(), err)
@@ -130,8 +116,11 @@ impl Store {
 #[cfg(test)]
 mod tests {
     use std::path::Path;
-    use tempdir::TempDir;
     use std::fs::read_dir;
+    use std::io::Read;
+    use std::os::unix::fs::PermissionsExt;
+
+    use tempdir::TempDir;
     use rand::{Rng, OsRng};
 
     use super::{Store};
@@ -158,26 +147,6 @@ mod tests {
         assert_ne!(p1.to_str().unwrap(), p2.to_str().unwrap());
         assert_eq!(p1.to_str().unwrap()[..10], p2.to_str().unwrap()[..10]);
         assert_ne!(p1.to_str().unwrap()[10..], p2.to_str().unwrap()[10..]);
-    }
-
-    #[test]
-    fn test_path() {
-        let s = Store::new(Path::new("/nope"));
-        assert_eq!(s.path(&[]).as_path(), Path::new("/nope/"));
-        assert_eq!(s.path(&[0]).as_path(), Path::new("/nope/00"));
-        assert_eq!(s.path(&[255]).as_path(), Path::new("/nope/ff"));
-        assert_eq!(s.path(&[0, 255]).as_path(), Path::new("/nope/00ff"));
-        assert_eq!(s.path(&[255, 0]).as_path(), Path::new("/nope/ff00"));
-    }
-
-    #[test]
-    fn test_sig_path() {
-        let s = Store::new(Path::new("/nope"));
-        let sig = [0u8; 400];
-        assert_eq!(
-            s.sig_path(&sig).as_path(),
-            Path::new("/nope/00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
-        );
     }
 
     #[test]
@@ -250,10 +219,22 @@ mod tests {
         };
         let mut content = [0u8; 1776];
         rng.fill_bytes(&mut content);
-        let digest: [u8; 48] = match store.write_object(&content) {
+        let content = content;
+        let key: [u8; 48] = match store.write_object(&content) {
             Ok(g) => g,
             Err(e) => panic!("Error: {}", e),
         };
+
+        {
+            let mut file = store.open_object(&key).unwrap();
+
+            let perm = file.metadata().unwrap().permissions();
+            assert_eq!(perm.mode() & 511, 0o400);
+
+            let mut buf = [0u8; 1776];
+            assert_eq!(file.read(&mut buf).unwrap(), buf.len());
+            assert_eq!(content.to_vec(), buf.to_vec());
+        }
 
         temp_dir.close().unwrap();
     }
