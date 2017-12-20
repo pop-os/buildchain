@@ -85,6 +85,9 @@ impl Store {
         println!("dst: {:?}", dst.as_path());
         match File::create(tmp.as_path()) {
             Ok(mut file) => {
+                let mut perm = file.metadata().unwrap().permissions();
+                perm.set_readonly(true);
+                file.set_permissions(perm).unwrap();
                 if let Err(err) = file.write_all(&content) {
                     return Err(format!("failed to write: {}", err));
                 }
