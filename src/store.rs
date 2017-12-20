@@ -36,8 +36,8 @@ pub fn random_id() -> String {
 }
 
 impl Store {
-    pub fn new(basedir: &Path) -> Store {
-        Store{basedir: PathBuf::from(basedir)}
+    pub fn new<P: AsRef<Path>>(basedir: P) -> Store {
+        Store{basedir: PathBuf::from(basedir.as_ref())}
     }
 
     pub fn temp_path(&self) -> PathBuf {
@@ -204,7 +204,7 @@ mod tests {
     #[test]
     fn test_init_dirs() {
         let temp_dir = TempDir::new("buildchain-test").unwrap();
-        let store = Store::new(temp_dir.path());
+        let store = Store::new(&temp_dir);
         store.init_dirs();
 
         let mut count = 0;
@@ -218,7 +218,7 @@ mod tests {
     #[test]
     fn test_write_object() {
         let temp_dir = TempDir::new("buildchain-test").unwrap();
-        let store = Store::new(temp_dir.path());
+        let store = Store::new(&temp_dir);
         store.init_dirs();
 
         let mut rng = match OsRng::new() {
