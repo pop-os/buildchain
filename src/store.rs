@@ -36,6 +36,23 @@ pub fn random_id() -> String {
     base32::encode(ALPHABET, &key)
 }
 
+
+fn create_dir_if_needed<P: AsRef<Path>>(path: P) ->io::Result<()> {
+    if path.as_ref().is_dir() {
+        return Ok(());
+    }
+    create_dir(path.as_ref())
+}
+
+
+fn to_canonical<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<()> {
+    let parent = dst.as_ref().parent().unwrap();
+    create_dir_if_needed(parent.parent().unwrap())?;
+    create_dir_if_needed(parent)?;
+    rename(src.as_ref(), dst.as_ref())?;
+    Ok(())
+}
+
 impl Store {
     pub fn new<P: AsRef<Path>>(basedir: P) -> Store {
         Store{basedir: PathBuf::from(basedir.as_ref())}
@@ -43,6 +60,14 @@ impl Store {
 
     pub fn temp_path(&self) -> PathBuf {
         self.basedir.join("tmp").join(random_id())
+    }
+
+    pub fn object_path(&self, key: &[u8; 48]) -> PathBuf {
+        self.basedir.join("object").join(relpath_2(key))
+    }
+
+    pub fn block_path(&self, sig: &[u8; 64]) -> PathBuf {
+        self.basedir.join("block").join(relpath_2(sig))
     }
 
     pub fn path_2(&self, key: &[u8]) -> PathBuf {
@@ -95,17 +120,8 @@ impl Store {
             })?;
         }
 
-        {
-            let parent = dst.as_path().parent().unwrap();
-            if ! parent.is_dir() {
-                create_dir(parent).map_err(|err| {
-                    format!("failed to create {:?}: {}", parent, err)
-                })?;
-            }
-        }
-
-        rename(tmp.as_path(), dst.as_path()).map_err(|err| {
-            format!("failed to rename {:?} -> {:?}: {}", tmp.as_path(), dst.as_path(), err)
+        to_canonical(tmp.as_path(), dst.as_path()).map_err(|err| {
+            format!("failed to rename {:?} to {:?}: {}", tmp.as_path(), dst.as_path(), err)
         })?;
 
         Ok(key)
