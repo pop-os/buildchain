@@ -72,14 +72,6 @@ impl Store {
         self.basedir.join("block").join(relpath_2(sig))
     }
 
-    pub fn path_2(&self, key: &[u8]) -> PathBuf {
-        self.basedir.join(relpath_2(key))
-    }
-
-    pub fn sig_path_2(&self, sig: &[u8; 400]) -> PathBuf {
-        return self.path_2(&sig[0..64]);
-    }
-
     pub fn open_object(&self, key: &[u8; 48]) -> io::Result<File> {
         File::open(self.object_path(key))
     }
@@ -153,46 +145,30 @@ mod tests {
     }
 
     #[test]
-    fn test_path_2() {
-        let s = Store::new(Path::new("/b"));
+    fn test_object_path() {
+        let s = Store::new(Path::new("/p"));
         assert_eq!(
-            s.path_2(&[0; 32]).as_path(),
-            Path::new("/b/AA/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+            s.object_path(&[0u8; 48]).as_path(),
+            Path::new("/p/object/AA/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
         );
         assert_eq!(
-            s.path_2(&[255; 32]).as_path(),
-            Path::new("/b/77/7777777777777777777777777777777777777777777777777Q")
-        );
-        assert_eq!(
-            s.path_2(&[0; 48]).as_path(),
-            Path::new("/b/AA/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-        );
-        assert_eq!(
-            s.path_2(&[255; 48]).as_path(),
-            Path::new("/b/77/777777777777777777777777777777777777777777777777777777777777777777777777776")
-        );
-        assert_eq!(
-            s.path_2(&[0; 64]).as_path(),
-            Path::new("/b/AA/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-        );
-        assert_eq!(
-            s.path_2(&[255; 64]).as_path(),
-            Path::new("/b/77/7777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777Y")
+            s.object_path(&[255u8; 48]).as_path(),
+            Path::new("/p/object/77/777777777777777777777777777777777777777777777777777777777777777777777777776")
         );
     }
 
     #[test]
-    fn test_sig_path_2() {
-        let s = Store::new(Path::new("/b"));
-        let sig1 = [0u8; 400];
-        let sig2 = [255u8; 400];
+    fn test_block_path() {
+        let s = Store::new(Path::new("/p"));
+        let sig1 = [0u8; 64];
+        let sig2 = [255u8; 64];
         assert_eq!(
-            s.sig_path_2(&sig1).as_path(),
-            Path::new("/b/AA/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+            s.block_path(&sig1).as_path(),
+            Path::new("/p/block/AA/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
         );
         assert_eq!(
-            s.sig_path_2(&sig2).as_path(),
-            Path::new("/b/77/7777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777Y")
+            s.block_path(&sig2).as_path(),
+            Path::new("/p/block/77/7777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777Y")
         );
     }
 
