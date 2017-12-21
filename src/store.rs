@@ -37,20 +37,23 @@ pub fn random_id() -> String {
 }
 
 
-fn create_dir_if_needed<P: AsRef<Path>>(path: P) ->io::Result<()> {
+fn create_dir_if_needed<P: AsRef<Path>>(path: P) ->Result<(), String> {
     if path.as_ref().is_dir() {
         return Ok(());
     }
-    create_dir(path.as_ref())
+    create_dir(path.as_ref()).map_err(|err| {
+        format!("create_dir failed: {:?}: {}", path.as_ref(), err)
+    })
 }
 
 
-fn to_canonical<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<()> {
+fn to_canonical<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> Result<(), String> {
     let parent = dst.as_ref().parent().unwrap();
     create_dir_if_needed(parent.parent().unwrap())?;
     create_dir_if_needed(parent)?;
-    rename(src.as_ref(), dst.as_ref())?;
-    Ok(())
+    rename(src.as_ref(), dst.as_ref()).map_err(|err| {
+        format!("rename failed: {:?} -> {:?}: {}", src.as_ref(), dst.as_ref(), err)
+    })
 }
 
 impl Store {
@@ -103,12 +106,9 @@ impl Store {
         let tmp = self.temp_path();
         let dst = self.path_2(&key[..]);
         {
-            let mut file = OpenOptions::new()
-                .create_new(true)
-                .mode(0o400)
-                .write(true)
-                .open(tmp.as_path())
-            .map_err(|err| {
+            let mut opt = OpenOptions::new();
+            let opt = opt.create_new(true).write(true).mode(0o400);
+            let mut file = opt.open(tmp.as_path()).map_err(|err| {
                 format!("failed to create file {:?}: {}", tmp.as_path(), err)
             })?;
 
@@ -120,9 +120,7 @@ impl Store {
             })?;
         }
 
-        to_canonical(tmp.as_path(), dst.as_path()).map_err(|err| {
-            format!("failed to rename {:?} to {:?}: {}", tmp.as_path(), dst.as_path(), err)
-        })?;
+        to_canonical(tmp.as_path(), dst.as_path())?;
 
         Ok(key)
     }
