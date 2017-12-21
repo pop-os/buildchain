@@ -76,14 +76,7 @@ impl Store {
         File::open(self.object_path(key))
     }
 
-    pub fn write_object(&self, content: &[u8]) -> Result<[u8; 48], String> {
-        let key = {
-            let mut key = [0u8; 48];
-            let digest = Sha384::digest(content);
-            key.copy_from_slice(digest.as_slice());
-            key
-        };
-
+    fn _write_content(&self, content: &[u8]) -> Result<PathBuf, String> {
         let tmp = self.temp_path();
         create_dir_if_needed(tmp.parent().unwrap())?;
         {
@@ -99,12 +92,38 @@ impl Store {
                 format!("failed to sync {:?}: {}", tmp.as_path(), err)
             })?;
         }
+        Ok(tmp)
+    }
 
+    pub fn write_object(&self, object: &[u8]) -> Result<[u8; 48], String> {
+        let key = {
+            let mut key = [0u8; 48];
+            let digest = Sha384::digest(object);
+            key.copy_from_slice(digest.as_slice());
+            key
+        };
+        let tmp = self._write_content(object)?;
         let dst = self.object_path(&key);
         to_canonical(tmp.as_path(), dst.as_path())?;
-
         Ok(key)
     }
+
+    pub fn write_block(&self, block: &[u8; 400]) -> Result<[u8; 64], String> {
+        let sig = {
+            let mut sig = [0u8; 64];
+            sig.copy_from_slice(&block[0..64]);
+            sig
+        };
+        let tmp = self._write_content(block)?;
+        let dst = self.block_path(&sig);
+        to_canonical(tmp.as_path(), dst.as_path())?;
+        Ok(sig)
+    }
+
+    pub fn open_block(&self, sig: &[u8; 64]) -> io::Result<File> {
+        File::open(self.block_path(sig))
+    }
+
 }
 
 
@@ -177,17 +196,13 @@ mod tests {
         let temp_dir = TempDir::new("buildchain-test").unwrap();
         let store = Store::new(&temp_dir);
 
-        let mut rng = match OsRng::new() {
-            Ok(g) => g,
-            Err(e) => panic!("Failed to obtain OsRng: {}", e),
+        let content = {
+            let mut content = [0u8; 1776];
+            let mut rng = OsRng::new().unwrap();
+            rng.fill_bytes(&mut content);
+            content
         };
-        let mut content = [0u8; 1776];
-        rng.fill_bytes(&mut content);
-        let content = content;
-        let key: [u8; 48] = match store.write_object(&content) {
-            Ok(g) => g,
-            Err(e) => panic!("Error: {}", e),
-        };
+        let key: [u8; 48] = store.write_object(&content).unwrap();
 
         {
             let mut file = store.open_object(&key).unwrap();
@@ -198,6 +213,35 @@ mod tests {
             let mut buf = [0u8; 1776];
             assert_eq!(file.read(&mut buf).unwrap(), buf.len());
             assert_eq!(content.to_vec(), buf.to_vec());
+        }
+
+        temp_dir.close().unwrap();
+    }
+
+    #[test]
+    fn test_write_block() {
+        let temp_dir = TempDir::new("buildchain-test").unwrap();
+        let store = Store::new(&temp_dir);
+
+        let block = {
+            let mut block = [0u8; 400];
+            let mut rng = OsRng::new().unwrap();
+            rng.fill_bytes(&mut block);
+            block
+        };
+
+        let sig: [u8; 64] = store.write_block(&block).unwrap();
+        assert_eq!(sig.to_vec(), block[0..64].to_vec());
+
+        {
+            let mut file = store.open_block(&sig).unwrap();
+
+            let perm = file.metadata().unwrap().permissions();
+            assert_eq!(perm.mode() & 511, 0o400);
+
+            let mut buf = [0u8; 400];
+            assert_eq!(file.read(&mut buf).unwrap(), buf.len());
+            assert_eq!(block.to_vec(), buf.to_vec());
         }
 
         temp_dir.close().unwrap();
