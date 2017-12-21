@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{self, Read, Write};
+use std::io::{self, Read};
 use std::path::Path;
 use std::process::Command;
 
@@ -234,7 +234,7 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
     };
     {
         let store = Store::new(&temp_dir);
-        let key = store.write_object(&manifest_bytes)?;
+        store.write_object(&manifest_bytes)?;
         if args.use_pihsm {
             let response = match sign_manifest(&manifest_bytes) {
                 Ok(response) => response,
@@ -242,7 +242,7 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
                     return Err(format!("failed to sign manifest: {}", err));
                 }
             };
-            store.write_block(&response);
+            store.write_block(&response)?;
         }
     }
         
