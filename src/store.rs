@@ -168,9 +168,9 @@ impl Store {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-    use std::fs::read_dir;
-    use std::io::Read;
+    use std::path::{Path, PathBuf};
+    use std::fs::{File, create_dir, read_dir};
+    use std::io::{Read, Write};
     use std::os::unix::fs::PermissionsExt;
 
     use tempdir::TempDir;
@@ -228,6 +228,45 @@ mod tests {
             s.block_path(&sig2).as_path(),
             Path::new("/p/block/77/7777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777Y")
         );
+    }
+
+    #[test]
+    fn test_import_object() {
+        let temp_dir = TempDir::new("buildchain-test").unwrap();
+        let store = Store::new(&temp_dir);
+
+        let content = {
+            let mut content = [0u8; 34969];
+            let mut rng = OsRng::new().unwrap();
+            rng.fill_bytes(&mut content);
+            content
+        };
+
+        let example = {
+            let artifacts = PathBuf::from(temp_dir.path()).join("artifacts");
+            create_dir(artifacts.as_path()).unwrap();
+            artifacts.join("example")
+        };
+
+        {
+            let mut file = File::create(example.as_path()).unwrap();
+            file.write_all(&content).unwrap();
+        }
+
+        let key: [u8; 48] = store.import_object(example.as_path()).unwrap();
+
+        {
+            let mut file = store.open_object(&key).unwrap();
+
+            let perm = file.metadata().unwrap().permissions();
+            assert_eq!(perm.mode() & 511, 0o400);
+
+            let mut buf = [0u8; 34969];
+            assert_eq!(file.read(&mut buf).unwrap(), buf.len());
+            assert_eq!(content.to_vec(), buf.to_vec());
+        }
+
+        temp_dir.close().unwrap();
     }
 
     #[test]
