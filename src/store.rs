@@ -1,6 +1,6 @@
 use std::fs::{File, OpenOptions, create_dir, rename};
-use std::io::{self, Write, Read};
-use std::os::unix::fs::{OpenOptionsExt,PermissionsExt};
+use std::io::{self, Write};
+use std::os::unix::fs::OpenOptionsExt;
 use std::path::{Path, PathBuf};
 use std::result::Result;
 
@@ -9,7 +9,6 @@ use rand::{Rng, OsRng};
 use sha2::{Sha384, Digest};
 
 const ALPHABET: Alphabet = Alphabet::RFC4648{padding:false};
-const RFC4648_ALPHABET: &'static [u8; 32] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
 pub struct Store {
     basedir: PathBuf,
@@ -81,37 +80,26 @@ impl Store {
         return self.path_2(&sig[0..64]);
     }
 
-    pub fn init_dirs(&self) {
-        create_dir(self.basedir.join("tmp").as_path()).unwrap();
-        let mut ab  = [0u8; 2];
-        for a in RFC4648_ALPHABET.iter() {
-            ab[0] = *a;
-            for b in RFC4648_ALPHABET.iter() {
-                ab[1] = *b;
-                let name = String::from_utf8(ab.to_vec()).unwrap();
-                create_dir(self.basedir.join(name).as_path()).unwrap();
-            }
-        }
-    }
-
     pub fn open_object(&self, key: &[u8; 48]) -> io::Result<File> {
-        File::open(self.path_2(&key[..]))
+        File::open(self.object_path(key))
     }
 
     pub fn write_object(&self, content: &[u8]) -> Result<[u8; 48], String> {
-        let mut key = [0; 48];
-        let digest = Sha384::digest(content);
-        key.copy_from_slice(digest.as_slice());
+        let key = {
+            let mut key = [0u8; 48];
+            let digest = Sha384::digest(content);
+            key.copy_from_slice(digest.as_slice());
+            key
+        };
 
         let tmp = self.temp_path();
-        let dst = self.path_2(&key[..]);
+        create_dir_if_needed(tmp.parent().unwrap())?;
         {
             let mut opt = OpenOptions::new();
             let opt = opt.create_new(true).write(true).mode(0o400);
             let mut file = opt.open(tmp.as_path()).map_err(|err| {
                 format!("failed to create file {:?}: {}", tmp.as_path(), err)
             })?;
-
             file.write_all(&content).map_err(|err| {
                 format!("failed to write {:?}: {}", tmp.as_path(), err)
             })?;
@@ -120,6 +108,7 @@ impl Store {
             })?;
         }
 
+        let dst = self.object_path(&key);
         to_canonical(tmp.as_path(), dst.as_path())?;
 
         Ok(key)
@@ -208,24 +197,9 @@ mod tests {
     }
 
     #[test]
-    fn test_init_dirs() {
-        let temp_dir = TempDir::new("buildchain-test").unwrap();
-        let store = Store::new(&temp_dir);
-        store.init_dirs();
-
-        let mut count = 0;
-        for entry in read_dir(temp_dir.path()).unwrap() {
-            count += 1;
-        }
-        assert_eq!(count, 1025);
-        temp_dir.close().unwrap();
-    }
-
-    #[test]
     fn test_write_object() {
         let temp_dir = TempDir::new("buildchain-test").unwrap();
         let store = Store::new(&temp_dir);
-        store.init_dirs();
 
         let mut rng = match OsRng::new() {
             Ok(g) => g,
