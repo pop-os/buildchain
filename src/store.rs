@@ -1,6 +1,6 @@
 use std::fs::{File, OpenOptions, create_dir, rename};
-use std::io::{self, Write};
-use std::os::unix::fs::OpenOptionsExt;
+use std::io::{self, Write, Read};
+use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::result::Result;
 
@@ -72,10 +72,6 @@ impl Store {
         self.basedir.join("block").join(relpath_2(sig))
     }
 
-    pub fn open_object(&self, key: &[u8; 48]) -> io::Result<File> {
-        File::open(self.object_path(key))
-    }
-
     fn _write_content(&self, content: &[u8]) -> Result<PathBuf, String> {
         let tmp = self.temp_path();
         create_dir_if_needed(tmp.parent().unwrap())?;
@@ -95,6 +91,45 @@ impl Store {
         Ok(tmp)
     }
 
+    pub fn import_object<P: AsRef<Path>>(&self, src: P) -> Result<[u8; 48], String> {
+        let key = {
+            let mut file =  File::open(src.as_ref()).map_err(|err| {
+                format!("failed to open file {:?}: {}", src.as_ref(), err)
+            })?;
+
+            { // Set mode to 0o400
+                let mut perm = file.metadata().unwrap().permissions();
+                perm.set_mode(0o400);
+                file.set_permissions(perm).map_err(|err| {
+                    format!("failed to set perms {:?}: {}", src.as_ref(), err)
+                })?;
+                file.sync_all().map_err(|err| {
+                    format!("failed to sync {:?}: {}", src.as_ref(), err)
+                })?;
+            }
+
+            let mut hasher = Sha384::default();
+            let mut buf = [0u8; 4096];
+            loop {
+                let len = file.read(&mut buf).map_err(|err| {
+                    format!("failed to read from {:?}: {}", src.as_ref(), err)
+                })?;
+                if len == 0 {
+                    break;
+                }
+                hasher.input(&buf[..len]);
+            }
+
+            let mut key = [0u8; 48];
+            key.copy_from_slice(hasher.result().as_slice());
+            key
+        };
+
+        let dst = self.object_path(&key);
+        to_canonical(src, dst)?;
+        Ok(key)
+    }
+
     pub fn write_object(&self, object: &[u8]) -> Result<[u8; 48], String> {
         let key = {
             let mut key = [0u8; 48];
@@ -104,8 +139,12 @@ impl Store {
         };
         let tmp = self._write_content(object)?;
         let dst = self.object_path(&key);
-        to_canonical(tmp.as_path(), dst.as_path())?;
+        to_canonical(tmp, dst)?;
         Ok(key)
+    }
+
+    pub fn open_object(&self, key: &[u8; 48]) -> io::Result<File> {
+        File::open(self.object_path(key))
     }
 
     pub fn write_block(&self, block: &[u8; 400]) -> Result<[u8; 64], String> {
@@ -116,7 +155,7 @@ impl Store {
         };
         let tmp = self._write_content(block)?;
         let dst = self.block_path(&sig);
-        to_canonical(tmp.as_path(), dst.as_path())?;
+        to_canonical(tmp, dst)?;
         Ok(sig)
     }
 
