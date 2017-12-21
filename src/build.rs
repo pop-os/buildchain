@@ -9,6 +9,7 @@ use tempdir::TempDir;
 
 use {Config, Manifest, Sha384, Source};
 use pihsm::sign_manifest;
+use store::Store;
 
 /// A temporary structure used to generate a unique build environment
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
@@ -150,22 +151,6 @@ pub struct BuildArguments<'a> {
     pub use_pihsm: bool,
 }
 
-fn write_tempfile(temp_dir: &TempDir, name: &str, data: &[u8]) -> Result<(), String> {
-    match File::create(temp_dir.path().join(name)) {
-        Ok(mut file) => {
-            if let Err(err) = file.write_all(&data) {
-                return Err(format!("failed to write {}: {}", name, err));
-            }
-            if let Err(err) = file.sync_all() {
-                return Err(format!("failed to sync {}: {}", name, err));
-            }
-        },
-        Err(err) => {
-            return Err(format!("failed to create {}: {}", name, err));
-        }
-    }
-    Ok(())
-}
 
 pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
     let config_path = args.config_path;
@@ -247,27 +232,21 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
             return Err(format!("failed to serialize manifest: {}", err));
         }
     };
-    match write_tempfile(&temp_dir, "manifest.json", &manifest_bytes) {
-        Ok(()) => (),
-        Err(err) => {
-            return Err(err);
+    {
+        let store = Store::new(&temp_dir);
+        let key = store.write_object(&manifest_bytes)?;
+        if args.use_pihsm {
+            let response = match sign_manifest(&manifest_bytes) {
+                Ok(response) => response,
+                Err(err) => {
+                    return Err(format!("failed to sign manifest: {}", err));
+                }
+            };
+            store.write_block(&response);
         }
     }
+        
 
-    if args.use_pihsm {
-        let response = match sign_manifest(&manifest_bytes) {
-            Ok(response) => response,
-            Err(err) => {
-                return Err(format!("failed to sign manifest: {}", err));
-            }
-        };
-        match write_tempfile(&temp_dir, "pihsm.signature", &response) {
-            Ok(()) => (),
-            Err(err) => {
-                return Err(err);
-            }
-        }
-    }
 
     match archive(&temp_dir, &args.output_path) {
         Ok(()) => {
