@@ -10,9 +10,6 @@ use sha2::{Sha384, Digest};
 
 const ALPHABET: Alphabet = Alphabet::RFC4648{padding:false};
 
-pub struct Store {
-    basedir: PathBuf,
-}
 
 pub fn relpath(key: &[u8]) -> PathBuf {
     let b32 = base32::encode(ALPHABET, key);
@@ -35,7 +32,6 @@ pub fn random_id() -> String {
     base32::encode(ALPHABET, &key)
 }
 
-
 fn create_dir_if_needed<P: AsRef<Path>>(path: P) ->Result<(), String> {
     if path.as_ref().is_dir() {
         return Ok(());
@@ -45,7 +41,6 @@ fn create_dir_if_needed<P: AsRef<Path>>(path: P) ->Result<(), String> {
     })
 }
 
-
 fn to_canonical<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> Result<(), String> {
     let parent = dst.as_ref().parent().unwrap();
     create_dir_if_needed(parent.parent().unwrap())?;
@@ -53,6 +48,11 @@ fn to_canonical<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> Result<(), St
     rename(src.as_ref(), dst.as_ref()).map_err(|err| {
         format!("rename failed: {:?} -> {:?}: {}", src.as_ref(), dst.as_ref(), err)
     })
+}
+
+
+pub struct Store {
+    basedir: PathBuf,
 }
 
 impl Store {
@@ -169,7 +169,6 @@ impl Store {
     pub fn open_block(&self, sig: &[u8; 64]) -> io::Result<File> {
         File::open(self.block_path(sig))
     }
-
 }
 
 
