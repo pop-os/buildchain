@@ -8,7 +8,7 @@ use store::{b32enc, b32dec};
 fn from_base32<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<u8>, D::Error> {
     use serde::de::Error;
     String::deserialize(deserializer).and_then(|string| {
-        Ok(b32dec(&string).unwrap())
+        b32dec(&string).ok_or(Error::custom("b32dec failed"))
     })
 }
 
