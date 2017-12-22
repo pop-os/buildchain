@@ -1,4 +1,4 @@
-use std::fs::{File, OpenOptions, create_dir, rename};
+use std::fs::{File, OpenOptions, create_dir, remove_dir, rename};
 use std::io::{self, Write, Read};
 use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
@@ -58,6 +58,13 @@ fn to_canonical<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> Result<(), St
 impl Store {
     pub fn new<P: AsRef<Path>>(basedir: P) -> Store {
         Store{basedir: PathBuf::from(basedir.as_ref())}
+    }
+
+    pub fn remove_tmp_dir(&self) -> Result<(), String> {
+        let tmp = self.basedir.join("tmp");
+        remove_dir(&tmp).map_err(|err| {
+            format!("remove_dir failed {:?}: {}", tmp, err)
+        })
     }
 
     pub fn temp_path(&self) -> PathBuf {
@@ -266,6 +273,11 @@ mod tests {
             assert_eq!(content.to_vec(), buf.to_vec());
         }
 
+        {
+            let tmp = temp_dir.path().join("tmp");
+            assert!(! tmp.exists());
+        }
+
         temp_dir.close().unwrap();
     }
 
@@ -291,6 +303,13 @@ mod tests {
             let mut buf = [0u8; 1776];
             assert_eq!(file.read(&mut buf).unwrap(), buf.len());
             assert_eq!(content.to_vec(), buf.to_vec());
+        }
+
+        {
+            let tmp = temp_dir.path().join("tmp");
+            assert!(tmp.is_dir());
+            store.remove_tmp_dir().unwrap();
+            assert!(! tmp.exists());
         }
 
         temp_dir.close().unwrap();
@@ -320,6 +339,13 @@ mod tests {
             let mut buf = [0u8; 400];
             assert_eq!(file.read(&mut buf).unwrap(), buf.len());
             assert_eq!(block.to_vec(), buf.to_vec());
+        }
+
+        {
+            let tmp = temp_dir.path().join("tmp");
+            assert!(tmp.is_dir());
+            store.remove_tmp_dir().unwrap();
+            assert!(! tmp.exists());
         }
 
         temp_dir.close().unwrap();

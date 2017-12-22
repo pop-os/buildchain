@@ -244,9 +244,8 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
             };
             store.write_block(&response)?;
         }
+        store.remove_tmp_dir()?;
     }
-        
-
 
     match archive(&temp_dir, &args.output_path) {
         Ok(()) => {
