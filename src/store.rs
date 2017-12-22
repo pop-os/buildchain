@@ -1,6 +1,6 @@
 use std::fs::{File, OpenOptions, create_dir, remove_dir, rename};
 use std::io::{self, Write, Read};
-use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+use std::os::unix::fs::{OpenOptionsExt, PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
 use std::result::Result;
 
@@ -151,6 +151,16 @@ impl Store {
         let tmp = self._write_content(object)?;
         let dst = self.object_path(&key);
         to_canonical(tmp, dst)?;
+        Ok(key)
+    }
+
+    pub fn write_manifest(&self, object: &[u8]) -> Result<[u8; 48], String> {
+        let key = self.write_object(object)?;
+        let link = self.basedir.join("manifest.json");
+        let target = PathBuf::from("object").join(relpath_2(&key));
+        symlink(target.as_path(), link.as_path()).map_err(|err| {
+            format!("failed to symlink {:?} --> {:?}: {}", link, target, err)
+        })?;
         Ok(key)
     }
 

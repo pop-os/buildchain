@@ -234,7 +234,7 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
     };
     {
         let store = Store::new(&temp_dir);
-        store.write_object(&manifest_bytes)?;
+        store.write_manifest(&manifest_bytes)?;
         if args.use_pihsm {
             let response = match sign_manifest(&manifest_bytes) {
                 Ok(response) => response,
