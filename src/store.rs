@@ -8,16 +8,20 @@ use base32::{self, Alphabet};
 use rand::{Rng, OsRng};
 use sha2::{Sha384, Digest};
 
-const ALPHABET: Alphabet = Alphabet::RFC4648{padding:false};
 
+const B32_ALPHABET: Alphabet = Alphabet::RFC4648{padding:false};
 
-pub fn relpath(key: &[u8]) -> PathBuf {
-    let b32 = base32::encode(ALPHABET, key);
-    PathBuf::from(b32)
+pub fn b32enc(bin: &[u8]) -> String {
+    base32::encode(B32_ALPHABET, bin)
 }
 
+pub fn b32dec(txt: &str) -> Option<Vec<u8>> {
+    base32::decode(B32_ALPHABET, txt)
+}
+
+
 pub fn relpath_2(key: &[u8]) -> PathBuf {
-    let b32 = base32::encode(ALPHABET, key);
+    let b32 = b32enc(key);
     let path = PathBuf::new();
     path.join(b32.get(0..2).unwrap()).join(b32.get(2..).unwrap())
 }
@@ -29,7 +33,7 @@ pub fn random_id() -> String {
     };
     let mut key = [0u8; 15];
     rng.fill_bytes(&mut key);
-    base32::encode(ALPHABET, &key)
+    b32enc(&key)
 }
 
 fn create_dir_if_needed<P: AsRef<Path>>(path: P) ->Result<(), String> {

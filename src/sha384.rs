@@ -3,19 +3,19 @@ use serde::{Serializer, Deserializer, Deserialize};
 use sha2::{self, Digest};
 use std::io::{self, Read};
 
+use store::{b32enc, b32dec};
+
 /// Deserializes a lowercase hex string to a `Vec<u8>`.
 fn from_hex<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<u8>, D::Error> {
     use serde::de::Error;
     String::deserialize(deserializer).and_then(|string| {
-        Vec::from_hex(&string).map_err(|err| {
-            Error::custom(err.to_string())
-        })
+        Ok(b32dec(&string).unwrap())
     })
 }
 
 /// Serializes `buffer` to a lowercase hex string.
 fn to_hex<T: AsRef<[u8]>, S: Serializer>(buffer: &T, serializer: S) -> Result<S::Ok, S::Error> {
-    serializer.serialize_str(&hex::encode(&buffer.as_ref()))
+    serializer.serialize_str(&b32enc(&buffer.as_ref()))
 }
 
 /// A serializable representation of a Sha384 hash
