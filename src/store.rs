@@ -23,7 +23,7 @@ pub fn b32dec(txt: &str) -> Option<Vec<u8>> {
 pub fn relpath_2(key: &[u8]) -> PathBuf {
     let b32 = b32enc(key);
     let path = PathBuf::new();
-    path.join(b32.get(0..2).unwrap()).join(b32.get(2..).unwrap())
+    path.join(&b32[0..2]).join(&b32[2..])
 }
 
 pub fn random_id() -> String {

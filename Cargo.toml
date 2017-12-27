@@ -19,11 +19,11 @@ doc = false
 
 [dependencies]
 base32 = "0.3"
-clap = "2.26"
+clap = "=2.26.0"
 lxd = "0.1.7"
 rand = "0.3"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-sha2 = "0.7.0"
+sha2 = "0.6"
 tempdir = "0.3"
