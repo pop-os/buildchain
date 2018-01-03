@@ -64,6 +64,15 @@ impl Sha384 {
             hasher.result().as_slice().to_vec()
         ))
     }
+
+    pub fn to_base32(&self) -> String {
+        let key = {
+            let mut key = [0u8; 48];
+            key.copy_from_slice(&self.0);
+            key
+        };
+        b32enc(&key)
+    }
 }
 
 #[cfg(test)]
