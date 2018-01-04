@@ -1,4 +1,5 @@
-use std::fs::{File, OpenOptions, create_dir, remove_dir, rename};
+use std::collections::BTreeMap;
+use std::fs::{File, OpenOptions, create_dir, remove_dir, rename, read_dir};
 use std::io::{self, Write, Read};
 use std::os::unix::fs::{OpenOptionsExt, PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
@@ -7,6 +8,8 @@ use std::result::Result;
 use base32::{self, Alphabet};
 use rand::{Rng, OsRng};
 use sha2::{Sha384, Digest};
+
+use manifest::Manifest;
 
 
 const B32_ALPHABET: Alphabet = Alphabet::RFC4648{padding:false};
@@ -139,6 +142,33 @@ impl Store {
         let dst = self.object_path(&key);
         to_canonical(src, dst)?;
         Ok(key)
+    }
+
+    pub fn import_artifacts(&self, time: u64) -> Result<Manifest, String> {
+        let artifacts = self.basedir.join("artifacts");
+        let mut files = BTreeMap::new();
+
+        let entries = read_dir(artifacts.as_path()).map_err(|err| {
+            format!("failed to read_dir {:?}: {}", artifacts.as_path(), err)
+        })?;
+        for entry in entries {
+            let entry = entry.map_err(|err| {
+                format!("failed to read_dir {:?}: {}", artifacts.as_path(), err)
+            })?;
+
+            let name = entry.file_name().into_string().map_err(|_| {
+                format!("not UTF-8: {:?}", entry.path())
+            })?;
+
+            let key = self.import_object(entry.path())?;
+
+            files.insert(name, b32enc(&key[..]));
+        }
+
+        Ok(Manifest {
+            time: time,
+            files: files,
+        })
     }
 
     pub fn write_object(&self, object: &[u8]) -> Result<[u8; 48], String> {
