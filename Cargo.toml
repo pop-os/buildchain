@@ -18,9 +18,10 @@ path = "src/main.rs"
 doc = false
 
 [dependencies]
-clap = "2.26"
-hex = "0.2"
+base32 = "0.3"
+clap = "=2.26.0"
 lxd = "0.1.7"
+rand = "0.3"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"

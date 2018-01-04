@@ -3,7 +3,7 @@ use std::fs::{File, read_dir};
 use std::io::{Error, ErrorKind, Result};
 use std::path::Path;
 
-use super::Sha384;
+use Sha384;
 
 /// A manifest of build artifacts
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
@@ -11,7 +11,7 @@ pub struct Manifest {
     /// The timestamp of the source control revision
     pub time: u64,
     /// A dictionary of filenames and their hashes
-    pub files: BTreeMap<String, Sha384>,
+    pub files: BTreeMap<String, String>,
 }
 
 impl Manifest {
@@ -42,7 +42,7 @@ impl Manifest {
             let file = File::open(entry.path())?;
             let sha = Sha384::new(file)?;
 
-            files.insert(name, sha);
+            files.insert(name, sha.to_base32());
         }
 
         Ok(Manifest {

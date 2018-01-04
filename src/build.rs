@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{self, Read, Write};
+use std::io::{self, Read};
 use std::path::Path;
 use std::process::Command;
 
@@ -7,8 +7,7 @@ use lxd::{Container, Image, Location};
 use serde_json;
 use tempdir::TempDir;
 
-use {Config, Manifest, Sha384, Source};
-use pihsm::sign_manifest;
+use {Config, Sha384, Source, Store, sign_manifest};
 
 /// A temporary structure used to generate a unique build environment
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
@@ -150,6 +149,7 @@ pub struct BuildArguments<'a> {
     pub use_pihsm: bool,
 }
 
+
 pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
     let config_path = args.config_path;
 
@@ -218,34 +218,15 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
         }
     }
 
-    let manifest = match Manifest::new(source_time, temp_dir.path().join("artifacts")) {
-        Ok(manifest) => manifest,
-        Err(err) => {
-            return Err(format!("failed to generate manifest: {}", err));
-        }
-    };
-
+    let store = Store::new(&temp_dir);
+    let manifest = store.import_artifacts(source_time)?;
     let manifest_bytes = match serde_json::to_vec_pretty(&manifest) {
         Ok(bytes) => bytes,
         Err(err) => {
             return Err(format!("failed to serialize manifest: {}", err));
         }
     };
-
-    match File::create(temp_dir.path().join("manifest.json")) {
-        Ok(mut file) => {
-            if let Err(err) = file.write_all(&manifest_bytes) {
-                return Err(format!("failed to write manifest: {}", err));
-            }
-            if let Err(err) = file.sync_all() {
-                return Err(format!("failed to sync manifest: {}", err));
-            }
-        },
-        Err(err) => {
-            return Err(format!("failed to create manifest: {}", err));
-        }
-    }
-
+    store.write_manifest(&manifest_bytes)?;
     if args.use_pihsm {
         let response = match sign_manifest(&manifest_bytes) {
             Ok(response) => response,
@@ -253,20 +234,9 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
                 return Err(format!("failed to sign manifest: {}", err));
             }
         };
-        match File::create(temp_dir.path().join("pihsm.signature")) {
-            Ok(mut file) => {
-                if let Err(err) = file.write_all(&response) {
-                    return Err(format!("failed to write signature: {}", err));
-                }
-                if let Err(err) = file.sync_all() {
-                    return Err(format!("failed to sync signature: {}", err));
-                }
-            },
-            Err(err) => {
-                return Err(format!("failed to create signature: {}", err));
-            }
-        }
+        store.write_tail(&response)?;
     }
+    store.remove_tmp_dir()?;
 
     match archive(&temp_dir, &args.output_path) {
         Ok(()) => {
