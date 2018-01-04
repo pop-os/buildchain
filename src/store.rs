@@ -163,6 +163,12 @@ impl Store {
             let key = self.import_object(entry.path())?;
 
             files.insert(name, b32enc(&key[..]));
+
+            let target = PathBuf::from("../object").join(relpath_2(&key));
+            let link = entry.path();
+            symlink(target.as_path(), link.as_path()).map_err(|err| {
+                format!("failed to symlink {:?} --> {:?}: {}", link, target, err)
+            })?;
         }
 
         Ok(Manifest {

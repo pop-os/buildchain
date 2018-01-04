@@ -220,32 +220,25 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
         }
     }
 
-    let manifest = match Manifest::new(source_time, temp_dir.path().join("artifacts")) {
-        Ok(manifest) => manifest,
-        Err(err) => {
-            return Err(format!("failed to generate manifest: {}", err));
-        }
-    };
+    let store = Store::new(&temp_dir);
+    let manifest = store.import_artifacts(source_time)?;
     let manifest_bytes = match serde_json::to_vec_pretty(&manifest) {
         Ok(bytes) => bytes,
         Err(err) => {
             return Err(format!("failed to serialize manifest: {}", err));
         }
     };
-    {
-        let store = Store::new(&temp_dir);
-        store.write_manifest(&manifest_bytes)?;
-        if args.use_pihsm {
-            let response = match sign_manifest(&manifest_bytes) {
-                Ok(response) => response,
-                Err(err) => {
-                    return Err(format!("failed to sign manifest: {}", err));
-                }
-            };
-            store.write_block(&response)?;
-        }
-        store.remove_tmp_dir()?;
+    store.write_manifest(&manifest_bytes)?;
+    if args.use_pihsm {
+        let response = match sign_manifest(&manifest_bytes) {
+            Ok(response) => response,
+            Err(err) => {
+                return Err(format!("failed to sign manifest: {}", err));
+            }
+        };
+        store.write_block(&response)?;
     }
+    store.remove_tmp_dir()?;
 
     match archive(&temp_dir, &args.output_path) {
         Ok(()) => {
