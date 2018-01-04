@@ -22,11 +22,18 @@ pub fn b32dec(txt: &str) -> Option<Vec<u8>> {
     base32::decode(B32_ALPHABET, txt)
 }
 
-
-pub fn relpath_2(key: &[u8]) -> PathBuf {
+fn relpath_2(key: &[u8]) -> PathBuf {
     let b32 = b32enc(key);
     let path = PathBuf::new();
     path.join(&b32[0..2]).join(&b32[2..])
+}
+
+fn block_relpath(sig: &[u8; 64]) -> PathBuf {
+    PathBuf::from("block").join(relpath_2(sig))
+}
+
+fn object_relpath(key: &[u8; 48]) -> PathBuf {
+    PathBuf::from("object").join(relpath_2(key))
 }
 
 pub fn random_id() -> String {
@@ -79,11 +86,11 @@ impl Store {
     }
 
     pub fn object_path(&self, key: &[u8; 48]) -> PathBuf {
-        self.basedir.join("object").join(relpath_2(key))
+        self.basedir.join(object_relpath(key))
     }
 
     pub fn block_path(&self, sig: &[u8; 64]) -> PathBuf {
-        self.basedir.join("block").join(relpath_2(sig))
+        self.basedir.join(block_relpath(sig))
     }
 
     fn _write_content(&self, content: &[u8]) -> Result<PathBuf, String> {
@@ -164,7 +171,7 @@ impl Store {
 
             files.insert(name, b32enc(&key[..]));
 
-            let target = PathBuf::from("../object").join(relpath_2(&key));
+            let target = object_relpath(&key);
             let link = entry.path();
             symlink(target.as_path(), link.as_path()).map_err(|err| {
                 format!("failed to symlink {:?} --> {:?}: {}", link, target, err)
@@ -193,7 +200,7 @@ impl Store {
     pub fn write_manifest(&self, object: &[u8]) -> Result<[u8; 48], String> {
         let key = self.write_object(object)?;
         let link = self.basedir.join("manifest.json");
-        let target = PathBuf::from("object").join(relpath_2(&key));
+        let target = object_relpath(&key);
         symlink(target.as_path(), link.as_path()).map_err(|err| {
             format!("failed to symlink {:?} --> {:?}: {}", link, target, err)
         })?;
@@ -216,6 +223,16 @@ impl Store {
         Ok(sig)
     }
 
+    pub fn write_tail(&self, block: &[u8; 400]) -> Result<[u8; 64], String> {
+        let sig = self.write_block(block)?;
+        let link = self.basedir.join("tail");
+        let target = block_relpath(&sig);
+        symlink(target.as_path(), link.as_path()).map_err(|err| {
+            format!("failed to symlink {:?} --> {:?}: {}", link, target, err)
+        })?;
+        Ok(sig)
+    }
+
     pub fn open_block(&self, sig: &[u8; 64]) -> io::Result<File> {
         File::open(self.block_path(sig))
     }
@@ -225,7 +242,7 @@ impl Store {
 #[cfg(test)]
 mod tests {
     use std::path::{Path, PathBuf};
-    use std::fs::{File, create_dir, read_dir};
+    use std::fs::{File, create_dir};
     use std::io::{Read, Write};
     use std::os::unix::fs::PermissionsExt;
 
