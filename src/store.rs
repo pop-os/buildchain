@@ -9,7 +9,7 @@ use base32::{self, Alphabet};
 use rand::{Rng, OsRng};
 use sha2::{Sha384, Digest};
 
-use manifest::Manifest;
+use Manifest;
 
 
 const B32_ALPHABET: Alphabet = Alphabet::RFC4648{padding:false};

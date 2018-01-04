@@ -14,8 +14,10 @@ pub use self::build::{build, BuildArguments};
 pub use self::config::Config;
 pub use self::lxd::Location;
 pub use self::manifest::Manifest;
+pub use self::pihsm::sign_manifest;
 pub use self::sha384::Sha384;
 pub use self::source::Source;
+pub use self::store::Store;
 
 mod build;
 mod config;

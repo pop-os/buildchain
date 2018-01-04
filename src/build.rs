@@ -7,9 +7,7 @@ use lxd::{Container, Image, Location};
 use serde_json;
 use tempdir::TempDir;
 
-use {Config, Manifest, Sha384, Source};
-use pihsm::sign_manifest;
-use store::Store;
+use {Config, Sha384, Source, Store, sign_manifest};
 
 /// A temporary structure used to generate a unique build environment
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
