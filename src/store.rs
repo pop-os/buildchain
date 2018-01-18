@@ -22,18 +22,12 @@ pub fn b32dec(txt: &str) -> Option<Vec<u8>> {
     base32::decode(B32_ALPHABET, txt)
 }
 
-fn relpath_2(key: &[u8]) -> PathBuf {
-    let b32 = b32enc(key);
-    let path = PathBuf::new();
-    path.join(&b32[0..2]).join(&b32[2..])
-}
-
 fn block_relpath(sig: &[u8; 64]) -> PathBuf {
-    PathBuf::from("block").join(relpath_2(sig))
+    PathBuf::from("block").join(b32enc(sig))
 }
 
 fn object_relpath(key: &[u8; 48]) -> PathBuf {
-    PathBuf::from("object").join(relpath_2(key))
+    PathBuf::from("object").join(b32enc(key))
 }
 
 pub fn random_id() -> String {
@@ -57,7 +51,6 @@ fn create_dir_if_needed<P: AsRef<Path>>(path: P) ->Result<(), String> {
 
 fn to_canonical<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> Result<(), String> {
     let parent = dst.as_ref().parent().unwrap();
-    create_dir_if_needed(parent.parent().unwrap())?;
     create_dir_if_needed(parent)?;
     rename(src.as_ref(), dst.as_ref()).map_err(|err| {
         format!("rename failed: {:?} -> {:?}: {}", src.as_ref(), dst.as_ref(), err)
@@ -171,7 +164,7 @@ impl Store {
 
             files.insert(name, b32enc(&key[..]));
 
-            let target = object_relpath(&key);
+            let target = PathBuf::from("..").join(object_relpath(&key));
             let link = entry.path();
             symlink(target.as_path(), link.as_path()).map_err(|err| {
                 format!("failed to symlink {:?} --> {:?}: {}", link, target, err)
@@ -280,11 +273,11 @@ mod tests {
         let s = Store::new(Path::new("/p"));
         assert_eq!(
             s.object_path(&[0u8; 48]).as_path(),
-            Path::new("/p/object/AA/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+            Path::new("/p/object/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
         );
         assert_eq!(
             s.object_path(&[255u8; 48]).as_path(),
-            Path::new("/p/object/77/777777777777777777777777777777777777777777777777777777777777777777777777776")
+            Path::new("/p/object/77777777777777777777777777777777777777777777777777777777777777777777777777776")
         );
     }
 
@@ -295,11 +288,11 @@ mod tests {
         let sig2 = [255u8; 64];
         assert_eq!(
             s.block_path(&sig1).as_path(),
-            Path::new("/p/block/AA/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+            Path::new("/p/block/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
         );
         assert_eq!(
             s.block_path(&sig2).as_path(),
-            Path::new("/p/block/77/7777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777Y")
+            Path::new("/p/block/777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777Y")
         );
     }
 
