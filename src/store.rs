@@ -222,13 +222,13 @@ impl Store {
         Ok(sig)
     }
 
-    pub fn write_tail(&self, block: &[u8; 400]) -> Result<[u8; 64], String> {
+    pub fn write_tail(&self, project: &str, branch: &str, block: &[u8; 400]) -> Result<[u8; 64], String> {
         let sig = self.write_block(block)?;
         let mut pb = self.basedir.join("tail");
         create_dir_if_needed(&pb);
-        pb.push("firmware");
+        pb.push(project);
         create_dir_if_needed(&pb);
-        pb.push("master");
+        pb.push(branch);
         let target = tail_to_block(&sig);
         symlink(target.as_path(), pb.as_path()).map_err(|err| {
             format!("failed to symlink {:?} --> {:?}: {}", pb, target, err)
@@ -432,7 +432,7 @@ mod tests {
             block
         };
 
-        let sig: [u8; 64] = store.write_tail(&block).unwrap();
+        let sig = store.write_tail("stuff", "junk", &block).unwrap();
         assert_eq!(sig.to_vec(), block[0..64].to_vec());
 
         {
@@ -449,9 +449,9 @@ mod tests {
         {
             let mut pb = temp_dir.path().join("tail");
             assert!(pb.is_dir());
-            pb.push("firmware");
+            pb.push("stuff");
             assert!(pb.is_dir());
-            pb.push("master");
+            pb.push("junk");
             assert!(pb.is_file());
             assert_eq!(pb.read_link().unwrap(), tail_to_block(&sig));
         }

@@ -234,7 +234,7 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
                 return Err(format!("failed to sign manifest: {}", err));
             }
         };
-        store.write_tail(&response)?;
+        store.write_tail("firmware", "master", &response)?;
     }
     store.remove_tmp_dir()?;
 
