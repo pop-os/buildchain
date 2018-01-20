@@ -143,6 +143,8 @@ fn archive<P: AsRef<Path>, Q: AsRef<Path>>(source_path: P, dest_path: Q) -> io::
 pub struct BuildArguments<'a> {
     pub config_path: &'a str,
     pub output_path: &'a str,
+    pub project_name: &'a str,
+    pub branch_name: &'a str,
     pub remote_opt: Option<&'a str>,
     pub source_url: &'a str,
     pub source_kind: &'a str,
@@ -234,7 +236,7 @@ pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
                 return Err(format!("failed to sign manifest: {}", err));
             }
         };
-        store.write_tail("firmware", "master", &response)?;
+        store.write_tail(args.project_name, args.branch_name, &response)?;
     }
     store.remove_tmp_dir()?;
 
