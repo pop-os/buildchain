@@ -30,6 +30,12 @@ fn object_relpath(key: &[u8; 48]) -> PathBuf {
     PathBuf::from("object").join(b32enc(key))
 }
 
+/* tail/PROJECT/BRANCH --> ../../block/B32SIGNATURE */
+fn tail_to_block(sig: &[u8; 64]) -> PathBuf {
+    PathBuf::from("../..").join(block_relpath(sig))
+}
+
+
 pub fn random_id() -> String {
     let mut rng = match OsRng::new() {
         Ok(g) => g,
@@ -218,10 +224,14 @@ impl Store {
 
     pub fn write_tail(&self, block: &[u8; 400]) -> Result<[u8; 64], String> {
         let sig = self.write_block(block)?;
-        let link = self.basedir.join("tail");
-        let target = block_relpath(&sig);
-        symlink(target.as_path(), link.as_path()).map_err(|err| {
-            format!("failed to symlink {:?} --> {:?}: {}", link, target, err)
+        let mut pb = self.basedir.join("tail");
+        create_dir_if_needed(&pb);
+        pb.push("firmware");
+        create_dir_if_needed(&pb);
+        pb.push("master");
+        let target = tail_to_block(&sig);
+        symlink(target.as_path(), pb.as_path()).map_err(|err| {
+            format!("failed to symlink {:?} --> {:?}: {}", pb, target, err)
         })?;
         Ok(sig)
     }
@@ -242,7 +252,7 @@ mod tests {
     use tempdir::TempDir;
     use rand::{Rng, OsRng};
 
-    use super::{Store, block_relpath};
+    use super::{Store, tail_to_block};
 
     #[test]
     fn test_new() {
@@ -437,9 +447,13 @@ mod tests {
         }
 
         {
-            let tail = temp_dir.path().join("tail");
-            assert!(tail.is_file());
-            assert_eq!(tail.read_link().unwrap(), block_relpath(&sig));
+            let mut pb = temp_dir.path().join("tail");
+            assert!(pb.is_dir());
+            pb.push("firmware");
+            assert!(pb.is_dir());
+            pb.push("master");
+            assert!(pb.is_file());
+            assert_eq!(pb.read_link().unwrap(), tail_to_block(&sig));
         }
 
         {
