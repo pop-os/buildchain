@@ -242,7 +242,7 @@ mod tests {
     use tempdir::TempDir;
     use rand::{Rng, OsRng};
 
-    use super::{Store};
+    use super::{Store, block_relpath};
 
     #[test]
     fn test_new() {
@@ -405,6 +405,46 @@ mod tests {
             assert!(tmp.is_dir());
             store.remove_tmp_dir().unwrap();
             assert!(! tmp.exists());
+        }
+
+        temp_dir.close().unwrap();
+    }
+
+    #[test]
+    fn test_write_tail() {
+        let temp_dir = TempDir::new("buildchain-test").unwrap();
+        let store = Store::new(&temp_dir);
+
+        let block = {
+            let mut block = [0u8; 400];
+            let mut rng = OsRng::new().unwrap();
+            rng.fill_bytes(&mut block);
+            block
+        };
+
+        let sig: [u8; 64] = store.write_tail(&block).unwrap();
+        assert_eq!(sig.to_vec(), block[0..64].to_vec());
+
+        {
+            let mut file = store.open_block(&sig).unwrap();
+
+            let perm = file.metadata().unwrap().permissions();
+            assert_eq!(perm.mode() & 511, 0o400);
+
+            let mut buf = [0u8; 400];
+            assert_eq!(file.read(&mut buf).unwrap(), buf.len());
+            assert_eq!(block.to_vec(), buf.to_vec());
+        }
+
+        {
+            let tail = temp_dir.path().join("tail");
+            assert!(tail.is_file());
+            assert_eq!(tail.read_link().unwrap(), block_relpath(&sig));
+        }
+
+        {
+            let tmp = temp_dir.path().join("tmp");
+            assert!(tmp.is_dir());
         }
 
         temp_dir.close().unwrap();
