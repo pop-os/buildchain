@@ -32,6 +32,18 @@ fn buildchain() -> Result<(), String> {
                         .help("Output directory")
                 )
                 .arg(
+                    Arg::with_name("project")
+                        .long("project")
+                        .takes_value(true)
+                        .help("Tail signature project name")
+                )
+                .arg(
+                    Arg::with_name("branch")
+                        .long("branch")
+                        .takes_value(true)
+                        .help("Tail signature branch name")
+                )
+                .arg(
                     Arg::with_name("remote")
                         .short("r")
                         .long("remote")
@@ -55,6 +67,8 @@ fn buildchain() -> Result<(), String> {
         build(BuildArguments {
             config_path: matches.value_of("config").unwrap_or("buildchain.json"),
             output_path: matches.value_of("output").unwrap_or("buildchain.tar"),
+            project_name: matches.value_of("project").unwrap_or("default"),
+            branch_name: matches.value_of("branch").unwrap_or("master"),
             remote_opt: matches.value_of("remote"),
             source_url: matches.value_of("source_url").unwrap_or("."),
             source_kind: matches.value_of("source_kind").unwrap_or("dir"),

@@ -30,6 +30,12 @@ fn object_relpath(key: &[u8; 48]) -> PathBuf {
     PathBuf::from("object").join(b32enc(key))
 }
 
+/* tail/PROJECT/BRANCH --> ../../block/B32SIGNATURE */
+fn tail_to_block(sig: &[u8; 64]) -> PathBuf {
+    PathBuf::from("../..").join(block_relpath(sig))
+}
+
+
 pub fn random_id() -> String {
     let mut rng = match OsRng::new() {
         Ok(g) => g,
@@ -216,12 +222,16 @@ impl Store {
         Ok(sig)
     }
 
-    pub fn write_tail(&self, block: &[u8; 400]) -> Result<[u8; 64], String> {
+    pub fn write_tail(&self, project: &str, branch: &str, block: &[u8; 400]) -> Result<[u8; 64], String> {
         let sig = self.write_block(block)?;
-        let link = self.basedir.join("tail");
-        let target = block_relpath(&sig);
-        symlink(target.as_path(), link.as_path()).map_err(|err| {
-            format!("failed to symlink {:?} --> {:?}: {}", link, target, err)
+        let mut pb = self.basedir.join("tail");
+        create_dir_if_needed(&pb);
+        pb.push(project);
+        create_dir_if_needed(&pb);
+        pb.push(branch);
+        let target = tail_to_block(&sig);
+        symlink(target.as_path(), pb.as_path()).map_err(|err| {
+            format!("failed to symlink {:?} --> {:?}: {}", pb, target, err)
         })?;
         Ok(sig)
     }
@@ -242,7 +252,7 @@ mod tests {
     use tempdir::TempDir;
     use rand::{Rng, OsRng};
 
-    use super::{Store};
+    use super::{Store, tail_to_block};
 
     #[test]
     fn test_new() {
@@ -405,6 +415,50 @@ mod tests {
             assert!(tmp.is_dir());
             store.remove_tmp_dir().unwrap();
             assert!(! tmp.exists());
+        }
+
+        temp_dir.close().unwrap();
+    }
+
+    #[test]
+    fn test_write_tail() {
+        let temp_dir = TempDir::new("buildchain-test").unwrap();
+        let store = Store::new(&temp_dir);
+
+        let block = {
+            let mut block = [0u8; 400];
+            let mut rng = OsRng::new().unwrap();
+            rng.fill_bytes(&mut block);
+            block
+        };
+
+        let sig = store.write_tail("stuff", "junk", &block).unwrap();
+        assert_eq!(sig.to_vec(), block[0..64].to_vec());
+
+        {
+            let mut file = store.open_block(&sig).unwrap();
+
+            let perm = file.metadata().unwrap().permissions();
+            assert_eq!(perm.mode() & 511, 0o400);
+
+            let mut buf = [0u8; 400];
+            assert_eq!(file.read(&mut buf).unwrap(), buf.len());
+            assert_eq!(block.to_vec(), buf.to_vec());
+        }
+
+        {
+            let mut pb = temp_dir.path().join("tail");
+            assert!(pb.is_dir());
+            pb.push("stuff");
+            assert!(pb.is_dir());
+            pb.push("junk");
+            assert!(pb.is_file());
+            assert_eq!(pb.read_link().unwrap(), tail_to_block(&sig));
+        }
+
+        {
+            let tmp = temp_dir.path().join("tmp");
+            assert!(tmp.is_dir());
         }
 
         temp_dir.close().unwrap();
