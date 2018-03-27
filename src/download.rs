@@ -18,7 +18,7 @@ pub struct DownloadArguments<'a> {
     pub file_opt: Option<&'a str>,
 }
 
-struct Downloader {
+pub struct Downloader {
     key: Vec<u8>,
     url: reqwest::Url,
     project: String,
@@ -27,7 +27,7 @@ struct Downloader {
 }
 
 impl Downloader {
-    fn new(key: &str, url: &str, project: &str, branch: &str, cert_opt: Option<&str>) -> Result<Downloader, String> {
+    pub fn new(key: &str, url: &str, project: &str, branch: &str, cert_opt: Option<&str>) -> Result<Downloader, String> {
         let key = b32dec(key).ok_or(format!("key not in base32 format"))?;
 
         let url = reqwest::Url::parse(url).map_err(err_str)?;
@@ -71,7 +71,7 @@ impl Downloader {
         Ok(data)
     }
 
-    fn object(&self, digest: &str) -> Result<Vec<u8>, String> {
+    pub fn object(&self, digest: &str) -> Result<Vec<u8>, String> {
         let path = format!("object/{}", digest);
         let data = self.download(&path)?;
 
@@ -83,7 +83,7 @@ impl Downloader {
         Ok(data)
     }
 
-    fn tail(&self) -> Result<Block, String> {
+    pub fn tail(&self) -> Result<Block, String> {
         let path = format!("tail/{}/{}", self.project, self.branch);
         let data = self.download(&path)?;
 

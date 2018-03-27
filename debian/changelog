@@ -1,3 +1,9 @@
+buildchain (0.4.4) bionic; urgency=medium
+
+  * 0.4.4 release
+
+ -- Jeremy Soller <jeremy@system76.com>  Tue, 27 Mar 2018 17:06:37 -0600
+
 buildchain (0.4.3) bionic; urgency=medium
 
   * 0.4.3 release

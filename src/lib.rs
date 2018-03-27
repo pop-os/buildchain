@@ -15,7 +15,7 @@ extern crate tempdir;
 pub use self::block::Block;
 pub use self::build::{build, BuildArguments};
 pub use self::config::Config;
-pub use self::download::{download, DownloadArguments};
+pub use self::download::{download, DownloadArguments, Downloader};
 pub use self::lxd::Location;
 pub use self::manifest::Manifest;
 pub use self::pihsm::sign_manifest;
