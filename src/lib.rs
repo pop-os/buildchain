@@ -2,7 +2,9 @@
 
 extern crate base32;
 extern crate lxd;
+extern crate plain;
 extern crate rand;
+extern crate reqwest;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -30,3 +32,8 @@ mod pihsm;
 mod sha384;
 mod source;
 mod store;
+
+// Helper function for errors
+pub (crate) fn err_str<E: ::std::error::Error>(err: E) -> String {
+    format!("{}", err.description())
+}

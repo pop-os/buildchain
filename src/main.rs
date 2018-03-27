@@ -77,6 +77,18 @@ fn buildchain() -> Result<(), String> {
                         .help("Tail signature branch name")
                 )
                 .arg(
+                    Arg::with_name("cert")
+                        .long("cert")
+                        .takes_value(true)
+                        .help("Remote URL certificate")
+                )
+                .arg(
+                    Arg::with_name("cache")
+                        .long("cache")
+                        .takes_value(true)
+                        .help("Local cache")
+                )
+                .arg(
                     Arg::with_name("key")
                         .takes_value(true)
                         .required(true)
@@ -89,10 +101,9 @@ fn buildchain() -> Result<(), String> {
                         .help("Remote URL")
                 )
                 .arg(
-                    Arg::with_name("cache")
+                    Arg::with_name("file")
                         .takes_value(true)
-                        .required(true)
-                        .help("Local cache")
+                        .help("Requested file")
                 )
         )
     .get_matches();
@@ -110,11 +121,13 @@ fn buildchain() -> Result<(), String> {
         })
     } else if let Some(matches) = matches.subcommand_matches("download") {
         download(DownloadArguments {
-            project_name: matches.value_of("project").unwrap_or("default"),
-            branch_name: matches.value_of("branch").unwrap_or("master"),
+            project: matches.value_of("project").unwrap_or("default"),
+            branch: matches.value_of("branch").unwrap_or("master"),
+            cert_opt: matches.value_of("cert"),
+            cache_opt: matches.value_of("cache"),
             key: matches.value_of("key").unwrap(),
             url: matches.value_of("url").unwrap(),
-            cache: matches.value_of("cache").unwrap(),
+            file_opt: matches.value_of("file")
         })
     } else {
         Err(format!("no subcommand provided"))
