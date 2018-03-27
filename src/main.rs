@@ -1,7 +1,7 @@
 extern crate buildchain;
 extern crate clap;
 
-use buildchain::{build, BuildArguments};
+use buildchain::{build, BuildArguments, download, DownloadArguments};
 use clap::{App, Arg, SubCommand};
 use std::io::{self, Write};
 use std::process;
@@ -61,6 +61,40 @@ fn buildchain() -> Result<(), String> {
                         .help("Source Kind (dir, git)")
                 )
         )
+        .subcommand(
+            SubCommand::with_name("download")
+                .about("Download from a buildchain project")
+                .arg(
+                    Arg::with_name("project")
+                        .long("project")
+                        .takes_value(true)
+                        .help("Tail signature project name")
+                )
+                .arg(
+                    Arg::with_name("branch")
+                        .long("branch")
+                        .takes_value(true)
+                        .help("Tail signature branch name")
+                )
+                .arg(
+                    Arg::with_name("key")
+                        .takes_value(true)
+                        .required(true)
+                        .help("Remote public key")
+                )
+                .arg(
+                    Arg::with_name("url")
+                        .takes_value(true)
+                        .required(true)
+                        .help("Remote URL")
+                )
+                .arg(
+                    Arg::with_name("cache")
+                        .takes_value(true)
+                        .required(true)
+                        .help("Local cache")
+                )
+        )
     .get_matches();
 
     if let Some(matches) = matches.subcommand_matches("build") {
@@ -73,6 +107,14 @@ fn buildchain() -> Result<(), String> {
             source_url: matches.value_of("source_url").unwrap_or("."),
             source_kind: matches.value_of("source_kind").unwrap_or("dir"),
             use_pihsm: matches.is_present("use_pihsm"),
+        })
+    } else if let Some(matches) = matches.subcommand_matches("download") {
+        download(DownloadArguments {
+            project_name: matches.value_of("project").unwrap_or("default"),
+            branch_name: matches.value_of("branch").unwrap_or("master"),
+            key: matches.value_of("key").unwrap(),
+            url: matches.value_of("url").unwrap(),
+            cache: matches.value_of("cache").unwrap(),
         })
     } else {
         Err(format!("no subcommand provided"))
