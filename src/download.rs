@@ -27,7 +27,7 @@ pub struct Downloader {
 }
 
 impl Downloader {
-    pub fn new(key: &str, url: &str, project: &str, branch: &str, cert_opt: Option<Vec<u8>>) -> Result<Downloader, String> {
+    pub fn new(key: &str, url: &str, project: &str, branch: &str, cert_opt: Option<&[u8]>) -> Result<Downloader, String> {
         let key = b32dec(key).ok_or(format!("key not in base32 format"))?;
 
         let url = reqwest::Url::parse(url).map_err(err_str)?;
@@ -37,7 +37,7 @@ impl Downloader {
 
             if let Some(cert) = cert_opt {
                 builder.add_root_certificate(
-                    reqwest::Certificate::from_pem(&cert).map_err(err_str)?
+                    reqwest::Certificate::from_pem(cert).map_err(err_str)?
                 );
             }
 
@@ -87,18 +87,24 @@ impl Downloader {
 }
 
 pub fn download<'a>(args: DownloadArguments<'a>) -> Result<(), String> {
+    let mut cert = Vec::new();
     let cert_opt = if let Some(cert_path) = args.cert_opt {
-        let mut cert = Vec::new();
         {
             let mut file = File::open(cert_path).map_err(err_str)?;
             file.read_to_end(&mut cert).map_err(err_str)?;
         }
-        Some(cert)
+        Some(cert.as_slice())
     } else {
         None
     };
 
-    let dl = Downloader::new(args.key, args.url, args.project, args.branch, cert_opt)?;
+    let dl = Downloader::new(
+        args.key,
+        args.url,
+        args.project,
+        args.branch,
+        cert_opt,
+    )?;
 
     let tail = dl.tail()?;
 
