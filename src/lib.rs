@@ -10,6 +10,7 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 extern crate sha2;
+extern crate sodiumoxide;
 extern crate tempdir;
 
 pub use self::block::Block;

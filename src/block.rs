@@ -1,5 +1,6 @@
-use plain::Plain;
+use plain::{self, Plain};
 use std::u64;
+use sodiumoxide::crypto::sign::{verify, PublicKey};
 
 use store::b32enc;
 
@@ -23,6 +24,8 @@ pub (crate) struct PackedBlock {
     request: PackedBlockRequest,
 }
 
+unsafe impl Plain for PackedBlock {}
+
 impl PackedBlock {
     // Convert to a usable struct through verification
     pub (crate) fn verify(&self, key: &[u8]) -> Result<Block, String> {
@@ -30,7 +33,8 @@ impl PackedBlock {
             return Err(format!("public key mismatch"));
         }
 
-        //TODO: Check signature
+        let public_key = PublicKey(self.public_key);
+        verify(unsafe { plain::as_bytes(self) }, &public_key);
 
         Ok(Block {
             signature: b32enc(&self.signature),
@@ -42,8 +46,6 @@ impl PackedBlock {
         })
     }
 }
-
-unsafe impl Plain for PackedBlock {}
 
 #[derive(Debug)]
 pub struct Block {
