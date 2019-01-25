@@ -36,7 +36,7 @@ impl Downloader {
             let mut builder = reqwest::Client::builder();
 
             if let Some(cert) = cert_opt {
-                builder.add_root_certificate(
+                builder = builder.add_root_certificate(
                     reqwest::Certificate::from_pem(cert).map_err(err_str)?
                 );
             }

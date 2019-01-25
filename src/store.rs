@@ -6,7 +6,8 @@ use std::path::{Path, PathBuf};
 use std::result::Result;
 
 use base32::{self, Alphabet};
-use rand::{Rng, OsRng};
+use rand::RngCore;
+use rand::rngs::OsRng;
 use sha2::{Sha384, Digest};
 
 use Manifest;
@@ -464,4 +465,3 @@ mod tests {
         temp_dir.close().unwrap();
     }
 }
-
