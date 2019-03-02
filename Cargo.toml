@@ -1,6 +1,6 @@
 [package]
 name = "buildchain"
-version = "0.4.6"
+version = "0.4.7"
 authors = ["Jeremy Soller <jackpot51@gmail.com>"]
 description = "Software for creating and managing a distributed and reproducible chain of builds"
 documentation = "https://docs.rs/buildchain"
@@ -20,13 +20,13 @@ doc = false
 [dependencies]
 base32 = "0.4.0"
 clap = "2.32.0"
-lxd = "0.1.7"
+lxd = "0.1.8"
 plain = "0.2.3"
 rand = "0.6.5"
 reqwest = "0.9.10"
-sodiumoxide = "0.2.0"
-serde = "1.0.88"
-serde_derive = "1.0.88"
-serde_json = "1.0.38"
+sodiumoxide = "0.2.1"
+serde = "1.0.89"
+serde_derive = "1.0.89"
+serde_json = "1.0.39"
 sha2 = "0.8.0"
 tempdir = "0.3.7"
