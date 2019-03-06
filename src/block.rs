@@ -1,6 +1,6 @@
 use plain::{self, Plain};
 use std::u64;
-use sodiumoxide::crypto::sign::{verify, PublicKey};
+use sodalite::sign_attached_open;
 
 use store::b32enc;
 
@@ -33,8 +33,19 @@ impl PackedBlock {
             return Err(format!("public key mismatch"));
         }
 
-        let public_key = PublicKey(self.public_key);
-        verify(unsafe { plain::as_bytes(self) }, &public_key);
+        {
+            let sm = unsafe { plain::as_bytes(self) };
+
+            let mut m = vec![0; sm.len()];
+            match sign_attached_open(&mut m, sm, &self.public_key) {
+                Ok(count) => m.truncate(count),
+                Err(()) => return Err(format!("signature invalid")),
+            }
+
+            if m != sm {
+                return Err(format!("message data invalid"));
+            }
+        }
 
         Ok(Block {
             signature: b32enc(&self.signature),
