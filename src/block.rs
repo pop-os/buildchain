@@ -42,7 +42,8 @@ impl PackedBlock {
                 Err(()) => return Err(format!("signature invalid")),
             }
 
-            if m != sm {
+            // Check that message matches signed message after skipping the signature
+            if m != &sm[64..] {
                 return Err(format!("message data invalid"));
             }
         }
