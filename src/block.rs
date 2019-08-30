@@ -59,7 +59,7 @@ impl PackedBlock {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Block {
     pub signature: String,
     pub public_key: String,
