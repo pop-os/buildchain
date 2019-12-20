@@ -1,3 +1,9 @@
+buildchain (0.4.11) bionic; urgency=medium
+
+  * 0.4.11
+
+ -- Jeremy Soller <jeremy@system76.com>  Fri, 20 Dec 2019 10:39:18 -0700
+
 buildchain (0.4.10) bionic; urgency=medium
 
   * 0.4.10
