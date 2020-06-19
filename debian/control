@@ -16,4 +16,4 @@ Architecture: amd64
 Depends:
   ${misc:Depends},
   ${shlib:Depends}
-Description: Multiple USB File Flasher
+Description: Software for creating and managing a distributed and reproducible chain of builds
