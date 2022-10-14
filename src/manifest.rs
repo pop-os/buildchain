@@ -2,8 +2,9 @@ use std::collections::BTreeMap;
 use std::fs::{File, read_dir};
 use std::io::{Error, ErrorKind, Result};
 use std::path::Path;
+use serde::{Deserialize, Serialize};
 
-use Sha384;
+use crate::Sha384;
 
 /// A manifest of build artifacts
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]

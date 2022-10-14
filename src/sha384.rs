@@ -1,8 +1,8 @@
-use serde::{Serializer, Deserializer, Deserialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use sha2::{self, Digest};
 use std::io::{self, Read};
 
-use store::{b32enc, b32dec};
+use crate::store::{b32enc, b32dec};
 
 /// Deserializes a lowercase hex string to a `Vec<u8>`.
 fn from_base32<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<u8>, D::Error> {
@@ -57,11 +57,11 @@ impl Sha384 {
                 break;
             }
 
-            hasher.input(&data[..count]);
+            hasher.update(&data[..count]);
         }
 
         Ok(Sha384(
-            hasher.result().as_slice().to_vec()
+            hasher.finalize().as_slice().to_vec()
         ))
     }
 

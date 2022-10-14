@@ -1,12 +1,9 @@
-use plain;
-use reqwest;
-use serde_json;
 use std::fs::File;
 use std::io::{stdout, Read, Write};
 
-use {err_str, Block, Manifest, Sha384};
-use block::PackedBlock;
-use store::b32dec;
+use crate::{err_str, Block, Manifest, Sha384};
+use crate::block::PackedBlock;
+use crate::store::b32dec;
 
 pub struct DownloadArguments<'a> {
     pub project: &'a str,
@@ -23,7 +20,7 @@ pub struct Downloader {
     url: reqwest::Url,
     project: String,
     branch: String,
-    client: reqwest::Client,
+    client: reqwest::blocking::Client,
 }
 
 impl Downloader {
@@ -33,7 +30,7 @@ impl Downloader {
         let url = reqwest::Url::parse(url).map_err(err_str)?;
 
         let client = {
-            let mut builder = reqwest::Client::builder();
+            let mut builder = reqwest::blocking::Client::builder();
 
             if let Some(cert) = cert_opt {
                 builder = builder.add_root_certificate(

@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 /// A build configuration
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct Config {

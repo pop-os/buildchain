@@ -1,13 +1,13 @@
+use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{self, Read};
 use std::path::Path;
 use std::process::Command;
 
 use lxd::{Container, Image, Location};
-use serde_json;
 use tempdir::TempDir;
 
-use {Config, Sha384, Source, Store, sign_manifest};
+use crate::{Config, Sha384, Source, Store, sign_manifest};
 
 /// A temporary structure used to generate a unique build environment
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]

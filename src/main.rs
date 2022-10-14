@@ -1,6 +1,3 @@
-extern crate buildchain;
-extern crate clap;
-
 use buildchain::{build, BuildArguments, download, DownloadArguments};
 use clap::{App, Arg, SubCommand};
 use std::io::{self, Write};
@@ -13,20 +10,20 @@ fn buildchain() -> Result<(), String> {
                 .about("Build a buildchain project")
                 .arg(
                     Arg::with_name("use_pihsm")
-                        .short("p")
+                        .short('p')
                         .long("pihsm")
                         .help("Sign manifest with PiHSM")
                 )
                 .arg(
                     Arg::with_name("config")
-                        .short("c")
+                        .short('c')
                         .long("config")
                         .takes_value(true)
                         .help("Configuration file")
                 )
                 .arg(
                     Arg::with_name("output")
-                        .short("o")
+                        .short('o')
                         .long("output")
                         .takes_value(true)
                         .help("Output directory")
@@ -45,7 +42,7 @@ fn buildchain() -> Result<(), String> {
                 )
                 .arg(
                     Arg::with_name("remote")
-                        .short("r")
+                        .short('r')
                         .long("remote")
                         .takes_value(true)
                         .help("Remote LXC server")
