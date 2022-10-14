@@ -1,6 +1,5 @@
 use buildchain::{build, BuildArguments, download, DownloadArguments};
 use clap::{App, Arg, SubCommand};
-use std::io::{self, Write};
 use std::process;
 
 fn buildchain() -> Result<(), String> {
@@ -127,7 +126,7 @@ fn buildchain() -> Result<(), String> {
             file_opt: matches.value_of("file")
         })
     } else {
-        Err(format!("no subcommand provided"))
+        Err("no subcommand provided".to_string())
     }
 }
 
@@ -135,7 +134,7 @@ fn main() {
     match buildchain() {
         Ok(()) => (),
         Err(err) => {
-            writeln!(io::stderr(), "buildchain: {}", err).unwrap();
+            eprintln!("buildchain: {}", err);
             process::exit(1);
         }
     }

@@ -24,5 +24,5 @@ mod store;
 
 // Helper function for errors
 pub (crate) fn err_str<E: ::std::error::Error>(err: E) -> String {
-    format!("{}: {:?}", err.description(), err)
+    format!("{}: {:?}", err, err)
 }

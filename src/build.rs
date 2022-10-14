@@ -152,7 +152,7 @@ pub struct BuildArguments<'a> {
 }
 
 
-pub fn build<'a>(args: BuildArguments<'a>) -> Result<(), String> {
+pub fn build(args: BuildArguments) -> Result<(), String> {
     let config_path = args.config_path;
 
     let temp_dir = match TempDir::new("buildchain") {
