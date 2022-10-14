@@ -59,9 +59,9 @@ impl Source {
                 for line in stdout.trim().lines() {
                     let mut parts = line.trim().split('.');
 
-                    let time_str = parts.next().ok_or(io::Error::new(
+                    let time_str = parts.next().ok_or_else(|| io::Error::new(
                         io::ErrorKind::Other,
-                        format!("Find time not valid")
+                        "Find time not valid".to_string()
                     ))?;
 
                     let time = time_str.parse::<u64>().map_err(|err| {
@@ -85,7 +85,7 @@ impl Source {
                     Some(time) => Ok(time),
                     None => Err(io::Error::new(
                         io::ErrorKind::Other,
-                        format!("Find time not found")
+                        "Find time not found".to_string()
                     ))
                 }
             },

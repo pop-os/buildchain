@@ -47,8 +47,8 @@ impl Manifest {
         }
 
         Ok(Manifest {
-            time: time,
-            files: files,
+            time,
+            files,
         })
     }
 }

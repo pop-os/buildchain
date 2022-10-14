@@ -8,13 +8,13 @@ use crate::store::{b32enc, b32dec};
 fn from_base32<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<u8>, D::Error> {
     use serde::de::Error;
     String::deserialize(deserializer).and_then(|string| {
-        b32dec(&string).ok_or(Error::custom("b32dec failed"))
+        b32dec(&string).ok_or_else(|| Error::custom("b32dec failed"))
     })
 }
 
 /// Serializes `buffer` to a lowercase hex string.
 fn to_base32<T: AsRef<[u8]>, S: Serializer>(buffer: &T, serializer: S) -> Result<S::Ok, S::Error> {
-    serializer.serialize_str(&b32enc(&buffer.as_ref()))
+    serializer.serialize_str(&b32enc(buffer.as_ref()))
 }
 
 /// A serializable representation of a Sha384 hash

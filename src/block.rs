@@ -4,6 +4,7 @@ use sodalite::sign_attached_open;
 
 use crate::store::b32enc;
 
+#[allow(dead_code)]
 #[repr(packed)]
 pub (crate) struct PackedBlockRequest {
     signature: [u8; 64],
@@ -29,8 +30,8 @@ unsafe impl Plain for PackedBlock {}
 impl PackedBlock {
     // Convert to a usable struct through verification
     pub (crate) fn verify(&self, key: &[u8]) -> Result<Block, String> {
-        if &self.public_key != key {
-            return Err(format!("public key mismatch"));
+        if self.public_key != key {
+            return Err("public key mismatch".to_string());
         }
 
         {
@@ -39,12 +40,12 @@ impl PackedBlock {
             let mut m = vec![0; sm.len()];
             match sign_attached_open(&mut m, sm, &self.public_key) {
                 Ok(count) => m.truncate(count),
-                Err(()) => return Err(format!("signature invalid")),
+                Err(()) => return Err("signature invalid".to_string()),
             }
 
             // Check that message matches signed message after skipping the signature
-            if m != &sm[64..] {
-                return Err(format!("message data invalid"));
+            if m != sm[64..] {
+                return Err("message data invalid".to_string());
             }
         }
 

@@ -25,7 +25,7 @@ pub struct Downloader {
 
 impl Downloader {
     pub fn new(key: &str, url: &str, project: &str, branch: &str, cert_opt: Option<&[u8]>) -> Result<Downloader, String> {
-        let key = b32dec(key).ok_or(format!("key not in base32 format"))?;
+        let key = b32dec(key).ok_or_else(|| "key not in base32 format".to_string())?;
 
         let url = reqwest::Url::parse(url).map_err(err_str)?;
 
@@ -42,11 +42,11 @@ impl Downloader {
         };
 
         Ok(Downloader {
-            key: key,
-            url: url,
+            key,
+            url,
             project: project.to_string(),
             branch: branch.to_string(),
-            client: client,
+            client,
         })
     }
 
@@ -67,8 +67,8 @@ impl Downloader {
         let data = self.download(&path)?;
 
         let sha = Sha384::new(data.as_slice()).map_err(err_str)?;
-        if &sha.to_base32() != digest {
-            return Err(format!("sha384 mismatch"));
+        if sha.to_base32() != digest {
+            return Err("sha384 mismatch".to_string());
         }
 
         Ok(data)
@@ -78,12 +78,12 @@ impl Downloader {
         let path = format!("tail/{}/{}", self.project, self.branch);
         let data = self.download(&path)?;
 
-        let b: &PackedBlock = plain::from_bytes(&data).map_err(|_| format!("response too small"))?;
+        let b: &PackedBlock = plain::from_bytes(&data).map_err(|_| "response too small".to_string())?;
         b.verify(&self.key)
     }
 }
 
-pub fn download<'a>(args: DownloadArguments<'a>) -> Result<(), String> {
+pub fn download(args: DownloadArguments) -> Result<(), String> {
     let mut cert = Vec::new();
     let cert_opt = if let Some(cert_path) = args.cert_opt {
         {
@@ -116,7 +116,7 @@ pub fn download<'a>(args: DownloadArguments<'a>) -> Result<(), String> {
             return Err(format!("{} not found", file));
         }
     } else {
-        for (file, digest) in manifest.files.iter() {
+        for (file, _digest) in manifest.files.iter() {
             println!("{}", file);
         }
     }

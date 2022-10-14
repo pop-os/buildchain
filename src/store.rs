@@ -97,7 +97,7 @@ impl Store {
             let mut file = opt.open(tmp.as_path()).map_err(|err| {
                 format!("failed to create file {:?}: {}", tmp.as_path(), err)
             })?;
-            file.write_all(&content).map_err(|err| {
+            file.write_all(content).map_err(|err| {
                 format!("failed to write {:?}: {}", tmp.as_path(), err)
             })?;
             file.sync_all().map_err(|err| {
@@ -174,8 +174,8 @@ impl Store {
         }
 
         Ok(Manifest {
-            time: time,
-            files: files,
+            time,
+            files,
         })
     }
 
@@ -221,9 +221,9 @@ impl Store {
     pub fn write_tail(&self, project: &str, branch: &str, block: &[u8; 400]) -> Result<[u8; 64], String> {
         let sig = self.write_block(block)?;
         let mut pb = self.basedir.join("tail");
-        create_dir_if_needed(&pb);
+        create_dir_if_needed(&pb)?;
         pb.push(project);
-        create_dir_if_needed(&pb);
+        create_dir_if_needed(&pb)?;
         pb.push(branch);
         let target = tail_to_block(&sig);
         symlink(target.as_path(), pb.as_path()).map_err(|err| {
