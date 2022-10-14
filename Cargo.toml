@@ -1,11 +1,11 @@
 [package]
 name = "buildchain"
 version = "0.4.11"
+edition = "2021"
 authors = ["Jeremy Soller <jackpot51@gmail.com>"]
 description = "Software for creating and managing a distributed and reproducible chain of builds"
 documentation = "https://docs.rs/buildchain"
-repository = "https://github.com/system76/buildchain"
-readme = "README.md"
+repository = "https://github.com/pop-os/buildchain"
 license = "GPL-3.0"
 
 [lib]
@@ -19,14 +19,13 @@ doc = false
 
 [dependencies]
 base32 = "0.4.0"
-clap = "2.32.0"
-lxd = "0.1.8"
+clap = "3.2.15"
+lxd = "0.1.9"
 plain = "0.2.3"
-rand = "0.6.5"
-reqwest = "0.9.11"
-serde = "1.0.89"
-serde_derive = "1.0.89"
-serde_json = "1.0.39"
-sha2 = "0.8.0"
-sodalite = "0.3.0"
+rand = "0.8.5"
+reqwest = { version = "0.11.11", features = ["blocking"] }
+serde = { version = "1.0.140", features = ["derive"] }
+serde_json = "1.0.82"
+sha2 = "0.10.2"
+sodalite = "0.4.0"
 tempdir = "0.3.7"

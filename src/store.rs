@@ -10,8 +10,7 @@ use rand::RngCore;
 use rand::rngs::OsRng;
 use sha2::{Sha384, Digest};
 
-use Manifest;
-
+use crate::Manifest;
 
 const B32_ALPHABET: Alphabet = Alphabet::RFC4648{padding:false};
 
@@ -38,12 +37,8 @@ fn tail_to_block(sig: &[u8; 64]) -> PathBuf {
 
 
 pub fn random_id() -> String {
-    let mut rng = match OsRng::new() {
-        Ok(g) => g,
-        Err(e) => panic!("Failed to obtain OsRng: {}", e),
-    };
     let mut key = [0u8; 15];
-    rng.fill_bytes(&mut key);
+    OsRng.fill_bytes(&mut key);
     b32enc(&key)
 }
 
@@ -138,11 +133,11 @@ impl Store {
                 if len == 0 {
                     break;
                 }
-                hasher.input(&buf[..len]);
+                hasher.update(&buf[..len]);
             }
 
             let mut key = [0u8; 48];
-            key.copy_from_slice(hasher.result().as_slice());
+            key.copy_from_slice(hasher.finalize().as_slice());
             key
         };
 
@@ -251,7 +246,7 @@ mod tests {
     use std::os::unix::fs::PermissionsExt;
 
     use tempdir::TempDir;
-    use rand::{Rng, OsRng};
+    use rand::{rngs::OsRng, RngCore};
 
     use super::{Store, tail_to_block};
 
@@ -314,8 +309,7 @@ mod tests {
 
         let content = {
             let mut content = [0u8; 34969];
-            let mut rng = OsRng::new().unwrap();
-            rng.fill_bytes(&mut content);
+            OsRng.fill_bytes(&mut content);
             content
         };
 
@@ -358,8 +352,7 @@ mod tests {
 
         let content = {
             let mut content = [0u8; 1776];
-            let mut rng = OsRng::new().unwrap();
-            rng.fill_bytes(&mut content);
+            OsRng.fill_bytes(&mut content);
             content
         };
         let key: [u8; 48] = store.write_object(&content).unwrap();
@@ -392,8 +385,7 @@ mod tests {
 
         let block = {
             let mut block = [0u8; 400];
-            let mut rng = OsRng::new().unwrap();
-            rng.fill_bytes(&mut block);
+            OsRng.fill_bytes(&mut block);
             block
         };
 
@@ -428,8 +420,7 @@ mod tests {
 
         let block = {
             let mut block = [0u8; 400];
-            let mut rng = OsRng::new().unwrap();
-            rng.fill_bytes(&mut block);
+            OsRng.fill_bytes(&mut block);
             block
         };
 

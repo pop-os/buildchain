@@ -1,28 +1,16 @@
 //! Buildchain creates and manages a distributed and reproducible chain of builds
 
-extern crate base32;
-extern crate lxd;
-extern crate plain;
-extern crate rand;
-extern crate reqwest;
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_json;
-extern crate sha2;
-extern crate sodalite;
-extern crate tempdir;
+pub use lxd::Location;
 
-pub use self::block::Block;
-pub use self::build::{build, BuildArguments};
-pub use self::config::Config;
-pub use self::download::{download, DownloadArguments, Downloader};
-pub use self::lxd::Location;
-pub use self::manifest::Manifest;
-pub use self::pihsm::sign_manifest;
-pub use self::sha384::Sha384;
-pub use self::source::Source;
-pub use self::store::Store;
+pub use crate::block::Block;
+pub use crate::build::{build, BuildArguments};
+pub use crate::config::Config;
+pub use crate::download::{download, DownloadArguments, Downloader};
+pub use crate::manifest::Manifest;
+pub use crate::pihsm::sign_manifest;
+pub use crate::sha384::Sha384;
+pub use crate::source::Source;
+pub use crate::store::Store;
 
 mod block;
 mod build;
