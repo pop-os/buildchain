@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 use std::collections::BTreeMap;
 use std::fs::{create_dir, read_dir, remove_dir, rename, File, OpenOptions};
 use std::io::{self, Read, Write};

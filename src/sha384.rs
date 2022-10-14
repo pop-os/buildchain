@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use sha2::{self, Digest};
 use std::io::{self, Read};

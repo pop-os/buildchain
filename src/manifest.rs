@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fs::{read_dir, File};

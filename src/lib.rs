@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 //! Buildchain creates and manages a distributed and reproducible chain of builds
 
 pub use lxd::Location;
