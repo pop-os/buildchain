@@ -6,7 +6,7 @@ authors = ["Jeremy Soller <jackpot51@gmail.com>"]
 description = "Software for creating and managing a distributed and reproducible chain of builds"
 documentation = "https://docs.rs/buildchain"
 repository = "https://github.com/pop-os/buildchain"
-license = "GPL-3.0"
+license = "GPL-3.0-only"
 
 [lib]
 name = "buildchain"

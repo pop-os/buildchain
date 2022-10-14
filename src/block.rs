@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 use plain::{self, Plain};
 use serde::{Deserialize, Serialize};
 use sodalite::sign_attached_open;

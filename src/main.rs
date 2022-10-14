@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 use buildchain::{build, download, BuildArguments, DownloadArguments};
 use clap::{App, Arg, SubCommand};
 use std::process;
