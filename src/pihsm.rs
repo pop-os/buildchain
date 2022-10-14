@@ -20,7 +20,11 @@ pub fn sign_manifest(manifest: &[u8]) -> io::Result<[u8; 400]> {
             if bytes != response.len() {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidData,
-                    format!("pihsm-request: expected {} bytes, got {}", response.len(), bytes)
+                    format!(
+                        "pihsm-request: expected {} bytes, got {}",
+                        response.len(),
+                        bytes
+                    ),
                 ));
             }
         }
@@ -29,4 +33,3 @@ pub fn sign_manifest(manifest: &[u8]) -> io::Result<[u8; 400]> {
     }
     Ok(response)
 }
-

@@ -6,7 +6,7 @@ use crate::store::b32enc;
 
 #[allow(dead_code)]
 #[repr(packed)]
-pub (crate) struct PackedBlockRequest {
+pub(crate) struct PackedBlockRequest {
     signature: [u8; 64],
     public_key: [u8; 32],
     previous_signature: [u8; 64],
@@ -16,7 +16,7 @@ pub (crate) struct PackedBlockRequest {
 }
 
 #[repr(packed)]
-pub (crate) struct PackedBlock {
+pub(crate) struct PackedBlock {
     signature: [u8; 64],
     public_key: [u8; 32],
     previous_signature: [u8; 64],
@@ -29,7 +29,7 @@ unsafe impl Plain for PackedBlock {}
 
 impl PackedBlock {
     // Convert to a usable struct through verification
-    pub (crate) fn verify(&self, key: &[u8]) -> Result<Block, String> {
+    pub(crate) fn verify(&self, key: &[u8]) -> Result<Block, String> {
         if self.public_key != key {
             return Err("public key mismatch".to_string());
         }

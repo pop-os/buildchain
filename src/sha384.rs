@@ -2,14 +2,13 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use sha2::{self, Digest};
 use std::io::{self, Read};
 
-use crate::store::{b32enc, b32dec};
+use crate::store::{b32dec, b32enc};
 
 /// Deserializes a lowercase hex string to a `Vec<u8>`.
 fn from_base32<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<u8>, D::Error> {
     use serde::de::Error;
-    String::deserialize(deserializer).and_then(|string| {
-        b32dec(&string).ok_or_else(|| Error::custom("b32dec failed"))
-    })
+    String::deserialize(deserializer)
+        .and_then(|string| b32dec(&string).ok_or_else(|| Error::custom("b32dec failed")))
 }
 
 /// Serializes `buffer` to a lowercase hex string.
@@ -19,10 +18,7 @@ fn to_base32<T: AsRef<[u8]>, S: Serializer>(buffer: &T, serializer: S) -> Result
 
 /// A serializable representation of a Sha384 hash
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
-pub struct Sha384(
-    #[serde(deserialize_with = "from_base32", serialize_with = "to_base32")]
-    Vec<u8>
-);
+pub struct Sha384(#[serde(deserialize_with = "from_base32", serialize_with = "to_base32")] Vec<u8>);
 
 impl Sha384 {
     /// Create a new Sha384 by reading the provided input
@@ -60,9 +56,7 @@ impl Sha384 {
             hasher.update(&data[..count]);
         }
 
-        Ok(Sha384(
-            hasher.finalize().as_slice().to_vec()
-        ))
+        Ok(Sha384(hasher.finalize().as_slice().to_vec()))
     }
 
     pub fn to_base32(&self) -> String {
