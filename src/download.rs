@@ -1,9 +1,9 @@
 use std::fs::File;
 use std::io::{stdout, Read, Write};
 
-use crate::{err_str, Block, Manifest, Sha384};
 use crate::block::PackedBlock;
 use crate::store::b32dec;
+use crate::{err_str, Block, Manifest, Sha384};
 
 pub struct DownloadArguments<'a> {
     pub project: &'a str,
@@ -24,7 +24,13 @@ pub struct Downloader {
 }
 
 impl Downloader {
-    pub fn new(key: &str, url: &str, project: &str, branch: &str, cert_opt: Option<&[u8]>) -> Result<Downloader, String> {
+    pub fn new(
+        key: &str,
+        url: &str,
+        project: &str,
+        branch: &str,
+        cert_opt: Option<&[u8]>,
+    ) -> Result<Downloader, String> {
         let key = b32dec(key).ok_or_else(|| "key not in base32 format".to_string())?;
 
         let url = reqwest::Url::parse(url).map_err(err_str)?;
@@ -33,9 +39,8 @@ impl Downloader {
             let mut builder = reqwest::blocking::Client::builder();
 
             if let Some(cert) = cert_opt {
-                builder = builder.add_root_certificate(
-                    reqwest::Certificate::from_pem(cert).map_err(err_str)?
-                );
+                builder = builder
+                    .add_root_certificate(reqwest::Certificate::from_pem(cert).map_err(err_str)?);
             }
 
             builder.build().map_err(err_str)?
@@ -53,8 +58,12 @@ impl Downloader {
     fn download(&self, path: &str) -> Result<Vec<u8>, String> {
         let url = self.url.join(path).map_err(err_str)?;
         let mut response = self.client.get(url).send().map_err(err_str)?;
-        if ! response.status().is_success() {
-            return Err(format!("failed to download {}: {:?}", path, response.status()));
+        if !response.status().is_success() {
+            return Err(format!(
+                "failed to download {}: {:?}",
+                path,
+                response.status()
+            ));
         }
 
         let mut data = Vec::new();
@@ -78,7 +87,8 @@ impl Downloader {
         let path = format!("tail/{}/{}", self.project, self.branch);
         let data = self.download(&path)?;
 
-        let b: &PackedBlock = plain::from_bytes(&data).map_err(|_| "response too small".to_string())?;
+        let b: &PackedBlock =
+            plain::from_bytes(&data).map_err(|_| "response too small".to_string())?;
         b.verify(&self.key)
     }
 }
@@ -95,13 +105,7 @@ pub fn download(args: DownloadArguments) -> Result<(), String> {
         None
     };
 
-    let dl = Downloader::new(
-        args.key,
-        args.url,
-        args.project,
-        args.branch,
-        cert_opt,
-    )?;
+    let dl = Downloader::new(args.key, args.url, args.project, args.branch, cert_opt)?;
 
     let tail = dl.tail()?;
 

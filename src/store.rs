@@ -1,18 +1,18 @@
 use std::collections::BTreeMap;
-use std::fs::{File, OpenOptions, create_dir, remove_dir, rename, read_dir};
-use std::io::{self, Write, Read};
-use std::os::unix::fs::{OpenOptionsExt, PermissionsExt, symlink};
+use std::fs::{create_dir, read_dir, remove_dir, rename, File, OpenOptions};
+use std::io::{self, Read, Write};
+use std::os::unix::fs::{symlink, OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::result::Result;
 
 use base32::{self, Alphabet};
-use rand::RngCore;
 use rand::rngs::OsRng;
-use sha2::{Sha384, Digest};
+use rand::RngCore;
+use sha2::{Digest, Sha384};
 
 use crate::Manifest;
 
-const B32_ALPHABET: Alphabet = Alphabet::RFC4648{padding:false};
+const B32_ALPHABET: Alphabet = Alphabet::RFC4648 { padding: false };
 
 pub fn b32enc(bin: &[u8]) -> String {
     base32::encode(B32_ALPHABET, bin)
@@ -35,30 +35,32 @@ fn tail_to_block(sig: &[u8; 64]) -> PathBuf {
     PathBuf::from("../..").join(block_relpath(sig))
 }
 
-
 pub fn random_id() -> String {
     let mut key = [0u8; 15];
     OsRng.fill_bytes(&mut key);
     b32enc(&key)
 }
 
-fn create_dir_if_needed<P: AsRef<Path>>(path: P) ->Result<(), String> {
+fn create_dir_if_needed<P: AsRef<Path>>(path: P) -> Result<(), String> {
     if path.as_ref().is_dir() {
         return Ok(());
     }
-    create_dir(path.as_ref()).map_err(|err| {
-        format!("create_dir failed: {:?}: {}", path.as_ref(), err)
-    })
+    create_dir(path.as_ref())
+        .map_err(|err| format!("create_dir failed: {:?}: {}", path.as_ref(), err))
 }
 
 fn to_canonical<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> Result<(), String> {
     let parent = dst.as_ref().parent().unwrap();
     create_dir_if_needed(parent)?;
     rename(src.as_ref(), dst.as_ref()).map_err(|err| {
-        format!("rename failed: {:?} -> {:?}: {}", src.as_ref(), dst.as_ref(), err)
+        format!(
+            "rename failed: {:?} -> {:?}: {}",
+            src.as_ref(),
+            dst.as_ref(),
+            err
+        )
     })
 }
-
 
 pub struct Store {
     basedir: PathBuf,
@@ -66,14 +68,14 @@ pub struct Store {
 
 impl Store {
     pub fn new<P: AsRef<Path>>(basedir: P) -> Store {
-        Store{basedir: PathBuf::from(basedir.as_ref())}
+        Store {
+            basedir: PathBuf::from(basedir.as_ref()),
+        }
     }
 
     pub fn remove_tmp_dir(&self) -> Result<(), String> {
         let tmp = self.basedir.join("tmp");
-        remove_dir(&tmp).map_err(|err| {
-            format!("remove_dir failed {:?}: {}", tmp, err)
-        })
+        remove_dir(&tmp).map_err(|err| format!("remove_dir failed {:?}: {}", tmp, err))
     }
 
     pub fn temp_path(&self) -> PathBuf {
@@ -94,42 +96,38 @@ impl Store {
         {
             let mut opt = OpenOptions::new();
             let opt = opt.create_new(true).write(true).mode(0o400);
-            let mut file = opt.open(tmp.as_path()).map_err(|err| {
-                format!("failed to create file {:?}: {}", tmp.as_path(), err)
-            })?;
-            file.write_all(content).map_err(|err| {
-                format!("failed to write {:?}: {}", tmp.as_path(), err)
-            })?;
-            file.sync_all().map_err(|err| {
-                format!("failed to sync {:?}: {}", tmp.as_path(), err)
-            })?;
+            let mut file = opt
+                .open(tmp.as_path())
+                .map_err(|err| format!("failed to create file {:?}: {}", tmp.as_path(), err))?;
+            file.write_all(content)
+                .map_err(|err| format!("failed to write {:?}: {}", tmp.as_path(), err))?;
+            file.sync_all()
+                .map_err(|err| format!("failed to sync {:?}: {}", tmp.as_path(), err))?;
         }
         Ok(tmp)
     }
 
     pub fn import_object<P: AsRef<Path>>(&self, src: P) -> Result<[u8; 48], String> {
         let key = {
-            let mut file =  File::open(src.as_ref()).map_err(|err| {
-                format!("failed to open file {:?}: {}", src.as_ref(), err)
-            })?;
+            let mut file = File::open(src.as_ref())
+                .map_err(|err| format!("failed to open file {:?}: {}", src.as_ref(), err))?;
 
-            { // Set mode to 0o400
+            {
+                // Set mode to 0o400
                 let mut perm = file.metadata().unwrap().permissions();
                 perm.set_mode(0o400);
-                file.set_permissions(perm).map_err(|err| {
-                    format!("failed to set perms {:?}: {}", src.as_ref(), err)
-                })?;
-                file.sync_all().map_err(|err| {
-                    format!("failed to sync {:?}: {}", src.as_ref(), err)
-                })?;
+                file.set_permissions(perm)
+                    .map_err(|err| format!("failed to set perms {:?}: {}", src.as_ref(), err))?;
+                file.sync_all()
+                    .map_err(|err| format!("failed to sync {:?}: {}", src.as_ref(), err))?;
             }
 
             let mut hasher = Sha384::default();
             let mut buf = [0u8; 4096];
             loop {
-                let len = file.read(&mut buf).map_err(|err| {
-                    format!("failed to read from {:?}: {}", src.as_ref(), err)
-                })?;
+                let len = file
+                    .read(&mut buf)
+                    .map_err(|err| format!("failed to read from {:?}: {}", src.as_ref(), err))?;
                 if len == 0 {
                     break;
                 }
@@ -150,17 +148,16 @@ impl Store {
         let artifacts = self.basedir.join("artifacts");
         let mut files = BTreeMap::new();
 
-        let entries = read_dir(artifacts.as_path()).map_err(|err| {
-            format!("failed to read_dir {:?}: {}", artifacts.as_path(), err)
-        })?;
+        let entries = read_dir(artifacts.as_path())
+            .map_err(|err| format!("failed to read_dir {:?}: {}", artifacts.as_path(), err))?;
         for entry in entries {
-            let entry = entry.map_err(|err| {
-                format!("failed to read_dir {:?}: {}", artifacts.as_path(), err)
-            })?;
+            let entry = entry
+                .map_err(|err| format!("failed to read_dir {:?}: {}", artifacts.as_path(), err))?;
 
-            let name = entry.file_name().into_string().map_err(|_| {
-                format!("not UTF-8: {:?}", entry.path())
-            })?;
+            let name = entry
+                .file_name()
+                .into_string()
+                .map_err(|_| format!("not UTF-8: {:?}", entry.path()))?;
 
             let key = self.import_object(entry.path())?;
 
@@ -168,15 +165,11 @@ impl Store {
 
             let target = PathBuf::from("..").join(object_relpath(&key));
             let link = entry.path();
-            symlink(target.as_path(), link.as_path()).map_err(|err| {
-                format!("failed to symlink {:?} --> {:?}: {}", link, target, err)
-            })?;
+            symlink(target.as_path(), link.as_path())
+                .map_err(|err| format!("failed to symlink {:?} --> {:?}: {}", link, target, err))?;
         }
 
-        Ok(Manifest {
-            time,
-            files,
-        })
+        Ok(Manifest { time, files })
     }
 
     pub fn write_object(&self, object: &[u8]) -> Result<[u8; 48], String> {
@@ -196,9 +189,8 @@ impl Store {
         let key = self.write_object(object)?;
         let link = self.basedir.join("manifest.json");
         let target = object_relpath(&key);
-        symlink(target.as_path(), link.as_path()).map_err(|err| {
-            format!("failed to symlink {:?} --> {:?}: {}", link, target, err)
-        })?;
+        symlink(target.as_path(), link.as_path())
+            .map_err(|err| format!("failed to symlink {:?} --> {:?}: {}", link, target, err))?;
         Ok(key)
     }
 
@@ -218,7 +210,12 @@ impl Store {
         Ok(sig)
     }
 
-    pub fn write_tail(&self, project: &str, branch: &str, block: &[u8; 400]) -> Result<[u8; 64], String> {
+    pub fn write_tail(
+        &self,
+        project: &str,
+        branch: &str,
+        block: &[u8; 400],
+    ) -> Result<[u8; 64], String> {
         let sig = self.write_block(block)?;
         let mut pb = self.basedir.join("tail");
         create_dir_if_needed(&pb)?;
@@ -226,9 +223,8 @@ impl Store {
         create_dir_if_needed(&pb)?;
         pb.push(branch);
         let target = tail_to_block(&sig);
-        symlink(target.as_path(), pb.as_path()).map_err(|err| {
-            format!("failed to symlink {:?} --> {:?}: {}", pb, target, err)
-        })?;
+        symlink(target.as_path(), pb.as_path())
+            .map_err(|err| format!("failed to symlink {:?} --> {:?}: {}", pb, target, err))?;
         Ok(sig)
     }
 
@@ -237,18 +233,17 @@ impl Store {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use std::path::{Path, PathBuf};
-    use std::fs::{File, create_dir};
+    use std::fs::{create_dir, File};
     use std::io::{Read, Write};
     use std::os::unix::fs::PermissionsExt;
+    use std::path::{Path, PathBuf};
 
-    use tempdir::TempDir;
     use rand::{rngs::OsRng, RngCore};
+    use tempdir::TempDir;
 
-    use super::{Store, tail_to_block};
+    use super::{tail_to_block, Store};
 
     #[test]
     fn test_new() {
@@ -339,7 +334,7 @@ mod tests {
 
         {
             let tmp = temp_dir.path().join("tmp");
-            assert!(! tmp.exists());
+            assert!(!tmp.exists());
         }
 
         temp_dir.close().unwrap();
@@ -372,7 +367,7 @@ mod tests {
             let tmp = temp_dir.path().join("tmp");
             assert!(tmp.is_dir());
             store.remove_tmp_dir().unwrap();
-            assert!(! tmp.exists());
+            assert!(!tmp.exists());
         }
 
         temp_dir.close().unwrap();
@@ -407,7 +402,7 @@ mod tests {
             let tmp = temp_dir.path().join("tmp");
             assert!(tmp.is_dir());
             store.remove_tmp_dir().unwrap();
-            assert!(! tmp.exists());
+            assert!(!tmp.exists());
         }
 
         temp_dir.close().unwrap();

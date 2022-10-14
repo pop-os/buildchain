@@ -1,4 +1,4 @@
-use buildchain::{build, BuildArguments, download, DownloadArguments};
+use buildchain::{build, download, BuildArguments, DownloadArguments};
 use clap::{App, Arg, SubCommand};
 use std::process;
 
@@ -11,51 +11,51 @@ fn buildchain() -> Result<(), String> {
                     Arg::with_name("use_pihsm")
                         .short('p')
                         .long("pihsm")
-                        .help("Sign manifest with PiHSM")
+                        .help("Sign manifest with PiHSM"),
                 )
                 .arg(
                     Arg::with_name("config")
                         .short('c')
                         .long("config")
                         .takes_value(true)
-                        .help("Configuration file")
+                        .help("Configuration file"),
                 )
                 .arg(
                     Arg::with_name("output")
                         .short('o')
                         .long("output")
                         .takes_value(true)
-                        .help("Output directory")
+                        .help("Output directory"),
                 )
                 .arg(
                     Arg::with_name("project")
                         .long("project")
                         .takes_value(true)
-                        .help("Tail signature project name")
+                        .help("Tail signature project name"),
                 )
                 .arg(
                     Arg::with_name("branch")
                         .long("branch")
                         .takes_value(true)
-                        .help("Tail signature branch name")
+                        .help("Tail signature branch name"),
                 )
                 .arg(
                     Arg::with_name("remote")
                         .short('r')
                         .long("remote")
                         .takes_value(true)
-                        .help("Remote LXC server")
+                        .help("Remote LXC server"),
                 )
                 .arg(
                     Arg::with_name("source_url")
                         .takes_value(true)
-                        .help("Source URL")
+                        .help("Source URL"),
                 )
                 .arg(
                     Arg::with_name("source_kind")
                         .takes_value(true)
-                        .help("Source Kind (dir, git)")
-                )
+                        .help("Source Kind (dir, git)"),
+                ),
         )
         .subcommand(
             SubCommand::with_name("download")
@@ -64,45 +64,45 @@ fn buildchain() -> Result<(), String> {
                     Arg::with_name("project")
                         .long("project")
                         .takes_value(true)
-                        .help("Tail signature project name")
+                        .help("Tail signature project name"),
                 )
                 .arg(
                     Arg::with_name("branch")
                         .long("branch")
                         .takes_value(true)
-                        .help("Tail signature branch name")
+                        .help("Tail signature branch name"),
                 )
                 .arg(
                     Arg::with_name("cert")
                         .long("cert")
                         .takes_value(true)
-                        .help("Remote URL certificate")
+                        .help("Remote URL certificate"),
                 )
                 .arg(
                     Arg::with_name("cache")
                         .long("cache")
                         .takes_value(true)
-                        .help("Local cache")
+                        .help("Local cache"),
                 )
                 .arg(
                     Arg::with_name("key")
                         .takes_value(true)
                         .required(true)
-                        .help("Remote public key")
+                        .help("Remote public key"),
                 )
                 .arg(
                     Arg::with_name("url")
                         .takes_value(true)
                         .required(true)
-                        .help("Remote URL")
+                        .help("Remote URL"),
                 )
                 .arg(
                     Arg::with_name("file")
                         .takes_value(true)
-                        .help("Requested file")
-                )
+                        .help("Requested file"),
+                ),
         )
-    .get_matches();
+        .get_matches();
 
     if let Some(matches) = matches.subcommand_matches("build") {
         build(BuildArguments {
@@ -123,7 +123,7 @@ fn buildchain() -> Result<(), String> {
             cache_opt: matches.value_of("cache"),
             key: matches.value_of("key").unwrap(),
             url: matches.value_of("url").unwrap(),
-            file_opt: matches.value_of("file")
+            file_opt: matches.value_of("file"),
         })
     } else {
         Err("no subcommand provided".to_string())

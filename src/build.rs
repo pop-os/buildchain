@@ -7,7 +7,7 @@ use std::process::Command;
 use lxd::{Container, Image, Location};
 use tempdir::TempDir;
 
-use crate::{Config, Sha384, Source, Store, sign_manifest};
+use crate::{sign_manifest, Config, Sha384, Source, Store};
 
 /// A temporary structure used to generate a unique build environment
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
@@ -22,26 +22,30 @@ fn prepare(config: &Config, location: &Location) -> io::Result<String> {
     let build_json = serde_json::to_string(&BuildEnvironmentConfig {
         base: config.base.clone(),
         prepare: config.prepare.clone(),
-    }).map_err(|err| {
-        io::Error::new(io::ErrorKind::Other, err)
-    })?;
+    })
+    .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
 
-    let build_sha = Sha384::new(&mut build_json.as_bytes()).map_err(|err| {
-        io::Error::new(io::ErrorKind::Other, err)
-    })?;
+    let build_sha = Sha384::new(&mut build_json.as_bytes())
+        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
 
-    let build_sha_str = serde_json::to_string(&build_sha).map_err(|err| {
-        io::Error::new(io::ErrorKind::Other, err)
-    })?;
+    let build_sha_str = serde_json::to_string(&build_sha)
+        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
 
     let container_name = format!("buildchain-{}-prepare", config.name);
-    let build_image = format!("buildchain-{}-{}", config.name, build_sha_str.trim_matches('"'));
+    let build_image = format!(
+        "buildchain-{}-{}",
+        config.name,
+        build_sha_str.trim_matches('"')
+    );
 
     if Image::new(location.clone(), &build_image).is_ok() {
         println!("Build environment cached as {}", build_image);
     } else {
         let mut container = if config.privileged {
-            println!("Create privileged container {} from {}", container_name, &config.base);
+            println!(
+                "Create privileged container {} from {}",
+                container_name, &config.base
+            );
             unsafe { Container::new_privileged(location.clone(), &container_name, &config.base)? }
         } else {
             println!("Create container {} from {}", container_name, &config.base);
@@ -68,14 +72,23 @@ fn prepare(config: &Config, location: &Location) -> io::Result<String> {
     Ok(build_image)
 }
 
-fn run<P: AsRef<Path>, Q: AsRef<Path>>(config: &Config, location: &Location, build_image: &str, source_path: P, temp_path: Q) -> io::Result<()> {
+fn run<P: AsRef<Path>, Q: AsRef<Path>>(
+    config: &Config,
+    location: &Location,
+    build_image: &str,
+    source_path: P,
+    temp_path: Q,
+) -> io::Result<()> {
     let source_path = source_path.as_ref();
     let temp_path = temp_path.as_ref();
 
     let container_name = format!("buildchain-{}-build", config.name);
 
     let mut container = if config.privileged {
-        println!("Create privileged container {} from {}", container_name, build_image);
+        println!(
+            "Create privileged container {} from {}",
+            container_name, build_image
+        );
         unsafe { Container::new_privileged(location.clone(), &container_name, build_image)? }
     } else {
         println!("Create container {} from {}", container_name, build_image);
@@ -125,8 +138,10 @@ fn archive<P: AsRef<Path>, Q: AsRef<Path>>(source_path: P, dest_path: Q) -> io::
         .arg("--owner=0")
         .arg("--group=0")
         .arg("--numeric-owner")
-        .arg("--file").arg(dest_path)
-        .arg("--directory").arg(source_path)
+        .arg("--file")
+        .arg(dest_path)
+        .arg("--directory")
+        .arg(source_path)
         .arg(".")
         .status()?;
 
@@ -135,7 +150,7 @@ fn archive<P: AsRef<Path>, Q: AsRef<Path>>(source_path: P, dest_path: Q) -> io::
     } else {
         Err(io::Error::new(
             io::ErrorKind::Other,
-            format!("tar failed with status: {}", status)
+            format!("tar failed with status: {}", status),
         ))
     }
 }
@@ -151,7 +166,6 @@ pub struct BuildArguments<'a> {
     pub use_pihsm: bool,
 }
 
-
 pub fn build(args: BuildArguments) -> Result<(), String> {
     let config_path = args.config_path;
 
@@ -164,7 +178,7 @@ pub fn build(args: BuildArguments) -> Result<(), String> {
 
     let source = Source {
         kind: args.source_kind.to_string(),
-        url: args.source_url.to_string()
+        url: args.source_url.to_string(),
     };
 
     let source_path = temp_dir.path().join("source");
@@ -213,7 +227,13 @@ pub fn build(args: BuildArguments) -> Result<(), String> {
         }
     };
 
-    match run(&config, &location, &build_image, &source_path, &temp_dir.path()) {
+    match run(
+        &config,
+        &location,
+        &build_image,
+        &source_path,
+        &temp_dir.path(),
+    ) {
         Ok(()) => (),
         Err(err) => {
             return Err(format!("failed to run config {}: {}", config_path, err));
@@ -243,9 +263,13 @@ pub fn build(args: BuildArguments) -> Result<(), String> {
     match archive(&temp_dir, &args.output_path) {
         Ok(()) => {
             println!("buildchain: placed results in {}", args.output_path);
-        },
+        }
         Err(err) => {
-            return Err(format!("failed to move temporary directory {}: {}", temp_dir.as_ref().display(), err));
+            return Err(format!(
+                "failed to move temporary directory {}: {}",
+                temp_dir.as_ref().display(),
+                err
+            ));
         }
     }
 
