@@ -140,6 +140,7 @@ fn archive<P: AsRef<Path>, Q: AsRef<Path>>(source_path: P, dest_path: Q) -> io::
         .arg("--owner=0")
         .arg("--group=0")
         .arg("--numeric-owner")
+        .arg("--exclude-vcs")
         .arg("--file")
         .arg(dest_path)
         .arg("--directory")
