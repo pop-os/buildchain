@@ -193,7 +193,7 @@ pub fn build(args: BuildArguments) -> Result<(), String> {
         }
     };
 
-    let mut file = match File::open(&source_path.join(&config_path)) {
+    let mut file = match File::open(source_path.join(config_path)) {
         Ok(file) => file,
         Err(err) => {
             return Err(format!("failed to open config {}: {}", config_path, err));
@@ -235,7 +235,7 @@ pub fn build(args: BuildArguments) -> Result<(), String> {
         &location,
         &build_image,
         &source_path,
-        &temp_dir.path(),
+        temp_dir.path(),
     ) {
         Ok(()) => (),
         Err(err) => {
@@ -263,7 +263,7 @@ pub fn build(args: BuildArguments) -> Result<(), String> {
     }
     store.remove_tmp_dir()?;
 
-    match archive(&temp_dir, &args.output_path) {
+    match archive(&temp_dir, args.output_path) {
         Ok(()) => {
             println!("buildchain: placed results in {}", args.output_path);
         }
