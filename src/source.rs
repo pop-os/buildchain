@@ -70,7 +70,7 @@ impl Source {
                             io::ErrorKind::Other,
                             format!("Find time not a number: {}", err),
                         )
-                    })? as u64;
+                    })?;
 
                     time_opt = match time_opt {
                         Some(old_time) => {
