@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 use serde::{Deserialize, Serialize};
-use std::fs::File;
-use std::io::{self, Read};
+use std::fs;
+use std::io;
 use std::path::Path;
 use std::process::Command;
 
@@ -193,20 +193,10 @@ pub fn build(args: BuildArguments) -> Result<(), String> {
         }
     };
 
-    let mut file = match File::open(source_path.join(config_path)) {
-        Ok(file) => file,
-        Err(err) => {
-            return Err(format!("failed to open config {}: {}", config_path, err));
-        }
+    let string = match fs::read_to_string(source_path.join(config_path)) {
+        Ok(f) => f,
+        Err(err) => return Err(format!("failed to read config {}: {}", config_path, err)),
     };
-
-    let mut string = String::new();
-    match file.read_to_string(&mut string) {
-        Ok(_) => (),
-        Err(err) => {
-            return Err(format!("failed to read config {}: {}", config_path, err));
-        }
-    }
 
     let config = match serde_json::from_str::<Config>(&string) {
         Ok(config) => config,
