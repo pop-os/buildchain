@@ -172,12 +172,8 @@ pub struct BuildArguments<'a> {
 pub fn build(args: BuildArguments) -> Result<(), String> {
     let config_path = args.config_path;
 
-    let temp_dir = match TempDir::new("buildchain") {
-        Ok(dir) => dir,
-        Err(err) => {
-            return Err(format!("failed to create temporary directory: {}", err));
-        }
-    };
+    let temp_dir = TempDir::new("buildchain")
+        .map_err(|err| format!("failed to create temporary directory: {}", err))?;
 
     let source = Source {
         kind: args.source_kind.to_string(),
@@ -186,24 +182,15 @@ pub fn build(args: BuildArguments) -> Result<(), String> {
 
     let source_path = temp_dir.path().join("source");
 
-    let source_time = match source.download(&source_path) {
-        Ok(time) => time,
-        Err(err) => {
-            return Err(format!("failed to download source {:?}: {}", source, err));
-        }
-    };
+    let source_time = source
+        .download(&source_path)
+        .map_err(|err| format!("failed to download source {:?}: {}", source, err))?;
 
-    let string = match fs::read_to_string(source_path.join(config_path)) {
-        Ok(f) => f,
-        Err(err) => return Err(format!("failed to read config {}: {}", config_path, err)),
-    };
+    let string = fs::read_to_string(source_path.join(config_path))
+        .map_err(|err| format!("failed to read config {}: {}", config_path, err))?;
 
-    let config = match serde_json::from_str::<Config>(&string) {
-        Ok(config) => config,
-        Err(err) => {
-            return Err(format!("failed to parse config {}: {}", config_path, err));
-        }
-    };
+    let config = serde_json::from_str::<Config>(&string)
+        .map_err(|err| format!("failed to parse config {}: {}", config_path, err))?;
 
     let location = if let Some(remote) = args.remote_opt {
         println!("buildchain: building {} on {}", config.name, remote);
@@ -213,58 +200,40 @@ pub fn build(args: BuildArguments) -> Result<(), String> {
         Location::Local
     };
 
-    let build_image = match prepare(&config, &location) {
-        Ok(build_image) => build_image,
-        Err(err) => {
-            return Err(format!("failed to prepare config {}: {}", config_path, err));
-        }
-    };
+    let build_image = prepare(&config, &location)
+        .map_err(|err| format!("failed to prepare config {}: {}", config_path, err))?;
 
-    match run(
+    run(
         &config,
         &location,
         &build_image,
         &source_path,
         temp_dir.path(),
-    ) {
-        Ok(()) => (),
-        Err(err) => {
-            return Err(format!("failed to run config {}: {}", config_path, err));
-        }
-    }
+    )
+    .map_err(|err| format!("failed to run config {}: {}", config_path, err))?;
 
     let store = Store::new(&temp_dir);
     let manifest = store.import_artifacts(source_time)?;
-    let manifest_bytes = match serde_json::to_vec_pretty(&manifest) {
-        Ok(bytes) => bytes,
-        Err(err) => {
-            return Err(format!("failed to serialize manifest: {}", err));
-        }
-    };
+    let manifest_bytes = serde_json::to_vec_pretty(&manifest)
+        .map_err(|err| format!("failed to serialize manifest: {}", err))?;
+
     store.write_manifest(&manifest_bytes)?;
     if args.use_pihsm {
-        let response = match sign_manifest(&manifest_bytes) {
-            Ok(response) => response,
-            Err(err) => {
-                return Err(format!("failed to sign manifest: {}", err));
-            }
-        };
+        let response = sign_manifest(&manifest_bytes)
+            .map_err(|err| format!("failed to sign manifest: {}", err))?;
         store.write_tail(args.project_name, args.branch_name, &response)?;
     }
     store.remove_tmp_dir()?;
 
-    match archive(&temp_dir, args.output_path) {
-        Ok(()) => {
-            println!("buildchain: placed results in {}", args.output_path);
-        }
-        Err(err) => {
-            return Err(format!(
-                "failed to move temporary directory {}: {}",
-                temp_dir.as_ref().display(),
-                err
-            ));
-        }
-    }
+    archive(&temp_dir, args.output_path).map_err(|err| {
+        format!(
+            "failed to move temporary directory {}: {}",
+            temp_dir.as_ref().display(),
+            err
+        )
+    })?;
+
+    println!("buildchain: placed results in {}", args.output_path);
 
     Ok(())
 }
