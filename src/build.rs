@@ -169,11 +169,10 @@ pub struct BuildArguments<'a> {
     pub use_pihsm: bool,
 }
 
-pub fn build(args: BuildArguments) -> Result<(), String> {
+pub fn build(args: BuildArguments) -> io::Result<()> {
     let config_path = args.config_path;
 
-    let temp_dir = TempDir::new("buildchain")
-        .map_err(|err| format!("failed to create temporary directory: {}", err))?;
+    let temp_dir = TempDir::new("buildchain")?;
 
     let source = Source {
         kind: args.source_kind.to_string(),
@@ -182,15 +181,10 @@ pub fn build(args: BuildArguments) -> Result<(), String> {
 
     let source_path = temp_dir.path().join("source");
 
-    let source_time = source
-        .download(&source_path)
-        .map_err(|err| format!("failed to download source {:?}: {}", source, err))?;
+    let source_time = source.download(&source_path)?;
 
-    let string = fs::read_to_string(source_path.join(config_path))
-        .map_err(|err| format!("failed to read config {}: {}", config_path, err))?;
-
-    let config = serde_json::from_str::<Config>(&string)
-        .map_err(|err| format!("failed to parse config {}: {}", config_path, err))?;
+    let string = fs::read_to_string(source_path.join(config_path))?;
+    let config = serde_json::from_str::<Config>(&string)?;
 
     let location = if let Some(remote) = args.remote_opt {
         println!("buildchain: building {} on {}", config.name, remote);
@@ -200,8 +194,7 @@ pub fn build(args: BuildArguments) -> Result<(), String> {
         Location::Local
     };
 
-    let build_image = prepare(&config, &location)
-        .map_err(|err| format!("failed to prepare config {}: {}", config_path, err))?;
+    let build_image = prepare(&config, &location)?;
 
     run(
         &config,
@@ -209,29 +202,20 @@ pub fn build(args: BuildArguments) -> Result<(), String> {
         &build_image,
         &source_path,
         temp_dir.path(),
-    )
-    .map_err(|err| format!("failed to run config {}: {}", config_path, err))?;
+    )?;
 
     let store = Store::new(&temp_dir);
     let manifest = store.import_artifacts(source_time)?;
-    let manifest_bytes = serde_json::to_vec_pretty(&manifest)
-        .map_err(|err| format!("failed to serialize manifest: {}", err))?;
+    let manifest_bytes = serde_json::to_vec_pretty(&manifest)?;
 
     store.write_manifest(&manifest_bytes)?;
     if args.use_pihsm {
-        let response = sign_manifest(&manifest_bytes)
-            .map_err(|err| format!("failed to sign manifest: {}", err))?;
+        let response = sign_manifest(&manifest_bytes)?;
         store.write_tail(args.project_name, args.branch_name, &response)?;
     }
     store.remove_tmp_dir()?;
 
-    archive(&temp_dir, args.output_path).map_err(|err| {
-        format!(
-            "failed to move temporary directory {}: {}",
-            temp_dir.as_ref().display(),
-            err
-        )
-    })?;
+    archive(&temp_dir, args.output_path)?;
 
     println!("buildchain: placed results in {}", args.output_path);
 

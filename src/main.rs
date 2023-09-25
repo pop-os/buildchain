@@ -117,6 +117,7 @@ fn buildchain() -> Result<(), String> {
             source_kind: matches.value_of("source_kind").unwrap_or("dir"),
             use_pihsm: matches.is_present("use_pihsm"),
         })
+        .map_err(|err| format!("failed to build: {}", err))
     } else if let Some(matches) = matches.subcommand_matches("download") {
         download(DownloadArguments {
             project: matches.value_of("project").unwrap_or("default"),
