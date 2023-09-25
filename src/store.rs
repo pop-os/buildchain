@@ -5,7 +5,6 @@ use std::fs::{create_dir, read_dir, remove_dir, rename, File, OpenOptions};
 use std::io::{self, Read, Write};
 use std::os::unix::fs::{symlink, OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
-use std::result::Result;
 
 use base32::{self, Alphabet};
 use rand::rngs::OsRng;
@@ -43,25 +42,17 @@ pub fn random_id() -> String {
     b32enc(&key)
 }
 
-fn create_dir_if_needed<P: AsRef<Path>>(path: P) -> Result<(), String> {
+fn create_dir_if_needed<P: AsRef<Path>>(path: P) -> io::Result<()> {
     if path.as_ref().is_dir() {
         return Ok(());
     }
     create_dir(path.as_ref())
-        .map_err(|err| format!("create_dir failed: {:?}: {}", path.as_ref(), err))
 }
 
-fn to_canonical<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> Result<(), String> {
+fn to_canonical<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<()> {
     let parent = dst.as_ref().parent().unwrap();
     create_dir_if_needed(parent)?;
-    rename(src.as_ref(), dst.as_ref()).map_err(|err| {
-        format!(
-            "rename failed: {:?} -> {:?}: {}",
-            src.as_ref(),
-            dst.as_ref(),
-            err
-        )
-    })
+    rename(src.as_ref(), dst.as_ref())
 }
 
 pub struct Store {
@@ -75,9 +66,9 @@ impl Store {
         }
     }
 
-    pub fn remove_tmp_dir(&self) -> Result<(), String> {
+    pub fn remove_tmp_dir(&self) -> io::Result<()> {
         let tmp = self.basedir.join("tmp");
-        remove_dir(&tmp).map_err(|err| format!("remove_dir failed {:?}: {}", tmp, err))
+        remove_dir(tmp)
     }
 
     pub fn temp_path(&self) -> PathBuf {
@@ -92,44 +83,35 @@ impl Store {
         self.basedir.join(block_relpath(sig))
     }
 
-    fn _write_content(&self, content: &[u8]) -> Result<PathBuf, String> {
+    fn _write_content(&self, content: &[u8]) -> io::Result<PathBuf> {
         let tmp = self.temp_path();
         create_dir_if_needed(tmp.parent().unwrap())?;
         {
             let mut opt = OpenOptions::new();
             let opt = opt.create_new(true).write(true).mode(0o400);
-            let mut file = opt
-                .open(tmp.as_path())
-                .map_err(|err| format!("failed to create file {:?}: {}", tmp.as_path(), err))?;
-            file.write_all(content)
-                .map_err(|err| format!("failed to write {:?}: {}", tmp.as_path(), err))?;
-            file.sync_all()
-                .map_err(|err| format!("failed to sync {:?}: {}", tmp.as_path(), err))?;
+            let mut file = opt.open(tmp.as_path())?;
+            file.write_all(content)?;
+            file.sync_all()?;
         }
         Ok(tmp)
     }
 
-    pub fn import_object<P: AsRef<Path>>(&self, src: P) -> Result<[u8; 48], String> {
+    pub fn import_object<P: AsRef<Path>>(&self, src: P) -> io::Result<[u8; 48]> {
         let key = {
-            let mut file = File::open(src.as_ref())
-                .map_err(|err| format!("failed to open file {:?}: {}", src.as_ref(), err))?;
+            let mut file = File::open(src.as_ref())?;
 
             {
                 // Set mode to 0o400
                 let mut perm = file.metadata().unwrap().permissions();
                 perm.set_mode(0o400);
-                file.set_permissions(perm)
-                    .map_err(|err| format!("failed to set perms {:?}: {}", src.as_ref(), err))?;
-                file.sync_all()
-                    .map_err(|err| format!("failed to sync {:?}: {}", src.as_ref(), err))?;
+                file.set_permissions(perm)?;
+                file.sync_all()?;
             }
 
             let mut hasher = Sha384::default();
             let mut buf = [0u8; 4096];
             loop {
-                let len = file
-                    .read(&mut buf)
-                    .map_err(|err| format!("failed to read from {:?}: {}", src.as_ref(), err))?;
+                let len = file.read(&mut buf)?;
                 if len == 0 {
                     break;
                 }
@@ -146,20 +128,18 @@ impl Store {
         Ok(key)
     }
 
-    pub fn import_artifacts(&self, time: u64) -> Result<Manifest, String> {
+    pub fn import_artifacts(&self, time: u64) -> io::Result<Manifest> {
         let artifacts = self.basedir.join("artifacts");
         let mut files = BTreeMap::new();
 
-        let entries = read_dir(artifacts.as_path())
-            .map_err(|err| format!("failed to read_dir {:?}: {}", artifacts.as_path(), err))?;
+        let entries = read_dir(artifacts.as_path())?;
         for entry in entries {
-            let entry = entry
-                .map_err(|err| format!("failed to read_dir {:?}: {}", artifacts.as_path(), err))?;
+            let entry = entry?;
 
             let name = entry
                 .file_name()
                 .into_string()
-                .map_err(|_| format!("not UTF-8: {:?}", entry.path()))?;
+                .map_err(|err| io::Error::new(io::ErrorKind::InvalidInput, format!("{:?}", err)))?;
 
             let key = self.import_object(entry.path())?;
 
@@ -167,14 +147,13 @@ impl Store {
 
             let target = PathBuf::from("..").join(object_relpath(&key));
             let link = entry.path();
-            symlink(target.as_path(), link.as_path())
-                .map_err(|err| format!("failed to symlink {:?} --> {:?}: {}", link, target, err))?;
+            symlink(target.as_path(), link.as_path())?;
         }
 
         Ok(Manifest { time, files })
     }
 
-    pub fn write_object(&self, object: &[u8]) -> Result<[u8; 48], String> {
+    pub fn write_object(&self, object: &[u8]) -> io::Result<[u8; 48]> {
         let key = {
             let mut key = [0u8; 48];
             let digest = Sha384::digest(object);
@@ -187,12 +166,11 @@ impl Store {
         Ok(key)
     }
 
-    pub fn write_manifest(&self, object: &[u8]) -> Result<[u8; 48], String> {
+    pub fn write_manifest(&self, object: &[u8]) -> io::Result<[u8; 48]> {
         let key = self.write_object(object)?;
         let link = self.basedir.join("manifest.json");
         let target = object_relpath(&key);
-        symlink(target.as_path(), link.as_path())
-            .map_err(|err| format!("failed to symlink {:?} --> {:?}: {}", link, target, err))?;
+        symlink(target.as_path(), link.as_path())?;
         Ok(key)
     }
 
@@ -200,7 +178,7 @@ impl Store {
         File::open(self.object_path(key))
     }
 
-    pub fn write_block(&self, block: &[u8; 400]) -> Result<[u8; 64], String> {
+    pub fn write_block(&self, block: &[u8; 400]) -> io::Result<[u8; 64]> {
         let sig = {
             let mut sig = [0u8; 64];
             sig.copy_from_slice(&block[0..64]);
@@ -217,7 +195,7 @@ impl Store {
         project: &str,
         branch: &str,
         block: &[u8; 400],
-    ) -> Result<[u8; 64], String> {
+    ) -> io::Result<[u8; 64]> {
         let sig = self.write_block(block)?;
         let mut pb = self.basedir.join("tail");
         create_dir_if_needed(&pb)?;
@@ -225,8 +203,7 @@ impl Store {
         create_dir_if_needed(&pb)?;
         pb.push(branch);
         let target = tail_to_block(&sig);
-        symlink(target.as_path(), pb.as_path())
-            .map_err(|err| format!("failed to symlink {:?} --> {:?}: {}", pb, target, err))?;
+        symlink(target.as_path(), pb.as_path())?;
         Ok(sig)
     }
 
