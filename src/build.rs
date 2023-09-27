@@ -7,7 +7,7 @@ use std::path::Path;
 use std::process::Command;
 
 use lxd::{Container, Image, Location};
-use tempdir::TempDir;
+use tempfile::TempDir;
 
 use crate::{sign_manifest, Config, Sha384, Source, Store};
 
@@ -172,7 +172,7 @@ pub struct BuildArguments<'a> {
 pub fn build(args: BuildArguments) -> io::Result<()> {
     let config_path = args.config_path;
 
-    let temp_dir = TempDir::new("buildchain")?;
+    let temp_dir = TempDir::with_prefix("buildchain.")?;
 
     let source = Source {
         kind: args.source_kind.to_string(),
