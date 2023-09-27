@@ -2,6 +2,8 @@
 
 //! Buildchain creates and manages a distributed and reproducible chain of builds
 
+#![allow(clippy::uninlined_format_args)]
+
 pub use lxd::Location;
 
 pub use crate::block::Block;
