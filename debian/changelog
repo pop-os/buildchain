@@ -1,3 +1,11 @@
+buildchain (0.5.0) bionic; urgency=medium
+
+  * Excluded VCS files from the archive
+  * Changed some return types from `Result<T, String>` to `io::Result<T>`
+  * Updated dependencies
+
+ -- Tim Crawford <tcrawford@system76.com>  Wed, 27 Sep 2023 10:28:48 -0600
+
 buildchain (0.4.12) bionic; urgency=medium
 
   * 0.4.12
