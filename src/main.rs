@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
+#![allow(clippy::uninlined_format_args)]
+
 use buildchain::{build, download, BuildArguments, DownloadArguments};
 use clap::{App, Arg, SubCommand};
 use std::process;
