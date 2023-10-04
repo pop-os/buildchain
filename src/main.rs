@@ -60,6 +60,11 @@ fn buildchain() -> Result<(), String> {
                     Arg::new("source_kind")
                         .takes_value(true)
                         .help("Source Kind (dir, git)"),
+                )
+                .arg(
+                    Arg::new("exclude_source")
+                        .long("exclude-source")
+                        .help("Exclude the source checkout from the archive"),
                 ),
         )
         .subcommand(
@@ -119,6 +124,7 @@ fn buildchain() -> Result<(), String> {
             source_url: matches.value_of("source_url").unwrap_or("."),
             source_kind: matches.value_of("source_kind").unwrap_or("dir"),
             use_pihsm: matches.is_present("use_pihsm"),
+            exclude_source: matches.is_present("exclude_source"),
         })
         .map_err(|err| format!("failed to build: {}", err))
     } else if let Some(matches) = matches.subcommand_matches("download") {
