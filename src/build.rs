@@ -129,18 +129,30 @@ fn run<P: AsRef<Path>, Q: AsRef<Path>>(
     Ok(())
 }
 
-fn archive<P: AsRef<Path>, Q: AsRef<Path>>(source_path: P, dest_path: Q) -> io::Result<()> {
+fn archive<P: AsRef<Path>, Q: AsRef<Path>>(
+    source_path: P,
+    dest_path: Q,
+    exclude_source: bool,
+) -> io::Result<()> {
     let source_path = source_path.as_ref();
     let dest_path = dest_path.as_ref();
 
+    let mut args = vec![
+        "--create",
+        "--verbose",
+        "--sort=name",
+        "--owner=0",
+        "--group=0",
+        "--numeric-owner",
+        "--exclude-vcs",
+    ];
+
+    if exclude_source {
+        args.push("--exclude=./source")
+    }
+
     let status = Command::new("tar")
-        .arg("--create")
-        .arg("--verbose")
-        .arg("--sort=name")
-        .arg("--owner=0")
-        .arg("--group=0")
-        .arg("--numeric-owner")
-        .arg("--exclude-vcs")
+        .args(args)
         .arg("--file")
         .arg(dest_path)
         .arg("--directory")
@@ -167,6 +179,7 @@ pub struct BuildArguments<'a> {
     pub source_url: &'a str,
     pub source_kind: &'a str,
     pub use_pihsm: bool,
+    pub exclude_source: bool,
 }
 
 pub fn build(args: BuildArguments) -> io::Result<()> {
@@ -215,7 +228,7 @@ pub fn build(args: BuildArguments) -> io::Result<()> {
     }
     store.remove_tmp_dir()?;
 
-    archive(&temp_dir, args.output_path)?;
+    archive(&temp_dir, args.output_path, args.exclude_source)?;
 
     println!("buildchain: placed results in {}", args.output_path);
 
