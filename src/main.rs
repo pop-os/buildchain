@@ -8,6 +8,7 @@ use std::process;
 
 fn buildchain() -> Result<(), String> {
     let matches = App::new("buildchain")
+        .version(env!("CARGO_PKG_VERSION"))
         .subcommand(
             App::new("build")
                 .about("Build a buildchain project")
