@@ -1,3 +1,10 @@
+buildchain (0.5.1) bionic; urgency=medium
+
+  * Added option to print the version
+  * Added option to exclude the source checkout from the archive
+
+ -- Tim Crawford <tcrawford@system76.com>  Thu, 12 Oct 2023 16:11:27 -0600
+
 buildchain (0.5.0) bionic; urgency=medium
 
   * Excluded VCS files from the archive
