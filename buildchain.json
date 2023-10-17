@@ -1,6 +1,5 @@
 {
     "name": "buildchain",
-    "base": "ubuntu:22.04",
     "prepare": [
         ["touch", "/etc/fstab"],
         ["dhclient"],

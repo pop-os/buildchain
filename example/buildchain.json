@@ -1,6 +1,5 @@
 {
     "name": "example",
-    "base": "ubuntu:22.04",
     "prepare": [
         ["echo", "prepare"]
     ],

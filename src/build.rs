@@ -1,130 +1,52 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io;
+use std::env;
 use std::path::Path;
 use std::process::Command;
 
-use lxd::{Container, Image, Location};
 use tempfile::TempDir;
 
-use crate::{sign_manifest, Config, Sha384, Source, Store};
+use crate::{sign_manifest, Config, Source, Store};
 
-/// A temporary structure used to generate a unique build environment
-#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
-struct BuildEnvironmentConfig {
-    /// The LXC base to use
-    pub base: String,
-    /// The commands to run to generate a build environment
-    pub prepare: Vec<Vec<String>>,
-}
-
-fn prepare(config: &Config, location: &Location) -> io::Result<String> {
-    let build_json = serde_json::to_string(&BuildEnvironmentConfig {
-        base: config.base.clone(),
-        prepare: config.prepare.clone(),
-    })
-    .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-
-    let build_sha = Sha384::new(&mut build_json.as_bytes())
-        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-
-    let build_sha_str = serde_json::to_string(&build_sha)
-        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-
-    let container_name = format!("buildchain-{}-prepare", config.name);
-    let build_image = format!(
-        "buildchain-{}-{}",
-        config.name,
-        build_sha_str.trim_matches('"')
-    );
-
-    if Image::new(location.clone(), &build_image).is_ok() {
-        println!("Build environment cached as {}", build_image);
-    } else {
-        let mut container = if config.privileged {
-            println!(
-                "Create privileged container {} from {}",
-                container_name, &config.base
-            );
-            unsafe { Container::new_privileged(location.clone(), &container_name, &config.base)? }
-        } else {
-            println!("Create container {} from {}", container_name, &config.base);
-            Container::new(location.clone(), &container_name, &config.base)?
-        };
-
-        for command in config.prepare.iter() {
-            let mut args = vec![];
-            for arg in command.iter() {
-                args.push(arg.as_str());
-            }
-
-            println!("Prepare command {:?}", args);
-            container.exec(&args)?;
-        }
-
-        println!("Snapshot build environment as {}", build_image);
-        let snapshot = container.snapshot(&build_image)?;
-
-        println!("Publish build environment as {}", build_image);
-        snapshot.publish(&build_image)?;
-    }
-
-    Ok(build_image)
-}
-
-fn run<P: AsRef<Path>, Q: AsRef<Path>>(
-    config: &Config,
-    location: &Location,
-    build_image: &str,
-    source_path: P,
-    temp_path: Q,
-) -> io::Result<()> {
-    let source_path = source_path.as_ref();
-    let temp_path = temp_path.as_ref();
-
-    let container_name = format!("buildchain-{}-build", config.name);
-
-    let mut container = if config.privileged {
-        println!(
-            "Create privileged container {} from {}",
-            container_name, build_image
-        );
-        unsafe { Container::new_privileged(location.clone(), &container_name, build_image)? }
-    } else {
-        println!("Create container {} from {}", container_name, build_image);
-        Container::new(location.clone(), &container_name, build_image)?
-    };
-
-    println!("Push source");
-    container.push(source_path, "/root", true)?;
-
-    for command in config.build.iter() {
+fn prepare(config: &Config) -> io::Result<()> {
+    for command in config.prepare.iter() {
         let mut args = Vec::new();
-        for arg in command.iter() {
+        for arg in command.iter().skip(1) {
             args.push(arg.as_str());
         }
 
-        println!("Build command {:?}", args);
-        container.exec(&args)?;
+        println!("Prepare command: {} {:?}", &command[0], args);
+        Command::new(&command[0]).args(&args).status()?;
+    }
+
+    Ok(())
+}
+
+fn run(config: &Config) -> io::Result<()> {
+    for command in config.build.iter() {
+        let mut args = Vec::new();
+        for arg in command.iter().skip(1) {
+            args.push(arg.as_str());
+        }
+
+        println!("Build command: {} {:?}", &command[0], args);
+        Command::new(&command[0]).args(&args).status()?;
     }
 
     println!("Create artifact directory");
-    container.exec(&["mkdir", "/root/artifacts"])?;
+    fs::create_dir_all("artifacts")?;
 
     for command in config.publish.iter() {
         let mut args = Vec::new();
-        for arg in command.iter() {
+        for arg in command.iter().skip(1) {
             args.push(arg.as_str());
         }
 
-        println!("Publish command {:?}", args);
-        container.exec(&args)?;
+        println!("Publish command: {} {:?}", &command[0], args);
+        Command::new(&command[0]).args(&args).status()?;
     }
-
-    println!("Pull artifacts");
-    container.pull("/root/artifacts", temp_path, true)?;
 
     Ok(())
 }
@@ -175,7 +97,6 @@ pub struct BuildArguments<'a> {
     pub output_path: &'a str,
     pub project_name: &'a str,
     pub branch_name: &'a str,
-    pub remote_opt: Option<&'a str>,
     pub source_url: &'a str,
     pub source_kind: &'a str,
     pub use_pihsm: bool,
@@ -199,23 +120,16 @@ pub fn build(args: BuildArguments) -> io::Result<()> {
     let string = fs::read_to_string(source_path.join(config_path))?;
     let config = serde_json::from_str::<Config>(&string)?;
 
-    let location = if let Some(remote) = args.remote_opt {
-        println!("buildchain: building {} on {}", config.name, remote);
-        Location::Remote(remote.to_string())
-    } else {
-        println!("buildchain: building {} locally", config.name);
-        Location::Local
-    };
+    println!("buildchain: building {}", config.name);
 
-    let build_image = prepare(&config, &location)?;
+    // Run all commands from the context of the buildroot.
+    let cwd = env::current_dir()?;
+    env::set_current_dir(&temp_dir)?;
 
-    run(
-        &config,
-        &location,
-        &build_image,
-        &source_path,
-        temp_dir.path(),
-    )?;
+    prepare(&config)?;
+    run(&config)?;
+
+    env::set_current_dir(cwd)?;
 
     let store = Store::new(&temp_dir);
     let manifest = store.import_artifacts(source_time)?;
