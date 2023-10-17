@@ -49,13 +49,6 @@ fn buildchain() -> Result<(), String> {
                         .default_value("master"),
                 )
                 .arg(
-                    Arg::new("remote")
-                        .short('r')
-                        .long("remote")
-                        .num_args(1)
-                        .help("Remote LXC server"),
-                )
-                .arg(
                     Arg::new("source_url")
                         .num_args(1)
                         .help("Source URL")
@@ -124,7 +117,6 @@ fn buildchain() -> Result<(), String> {
             output_path: matches.get_one::<String>("output").unwrap(),
             project_name: matches.get_one::<String>("project").unwrap(),
             branch_name: matches.get_one::<String>("branch").unwrap(),
-            remote_opt: matches.get_one::<String>("remote").map(|s| s.as_str()),
             source_url: matches.get_one::<String>("source_url").unwrap(),
             source_kind: matches.get_one::<String>("source_kind").unwrap(),
             use_pihsm: matches.contains_id("use_pihsm"),

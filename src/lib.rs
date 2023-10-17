@@ -4,8 +4,6 @@
 
 #![allow(clippy::uninlined_format_args)]
 
-pub use lxd::Location;
-
 pub use crate::block::Block;
 pub use crate::build::{BuildArguments, build};
 pub use crate::config::Config;
