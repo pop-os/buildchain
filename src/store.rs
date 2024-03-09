@@ -220,7 +220,7 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     use rand::{rngs::OsRng, RngCore};
-    use tempdir::TempDir;
+    use tempfile::TempDir;
 
     use super::{tail_to_block, Store};
 
@@ -278,7 +278,7 @@ mod tests {
 
     #[test]
     fn test_import_object() {
-        let temp_dir = TempDir::new("buildchain-test").unwrap();
+        let temp_dir = TempDir::with_prefix("buildchain-test.").unwrap();
         let store = Store::new(&temp_dir);
 
         let content = {
@@ -321,7 +321,7 @@ mod tests {
 
     #[test]
     fn test_write_object() {
-        let temp_dir = TempDir::new("buildchain-test").unwrap();
+        let temp_dir = TempDir::with_prefix("buildchain-test.").unwrap();
         let store = Store::new(&temp_dir);
 
         let content = {
@@ -354,7 +354,7 @@ mod tests {
 
     #[test]
     fn test_write_block() {
-        let temp_dir = TempDir::new("buildchain-test").unwrap();
+        let temp_dir = TempDir::with_prefix("buildchain-test.").unwrap();
         let store = Store::new(&temp_dir);
 
         let block = {
@@ -389,7 +389,7 @@ mod tests {
 
     #[test]
     fn test_write_tail() {
-        let temp_dir = TempDir::new("buildchain-test").unwrap();
+        let temp_dir = TempDir::with_prefix("buildchain-test.").unwrap();
         let store = Store::new(&temp_dir);
 
         let block = {
