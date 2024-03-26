@@ -1,6 +1,5 @@
 {
     "name": "buildchain",
-    "base": "ubuntu:16.04",
     "prepare": [
         ["apt-get", "update"],
         ["apt-get", "dist-upgrade", "-y"],
