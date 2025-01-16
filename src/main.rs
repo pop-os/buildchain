@@ -51,11 +51,7 @@ fn buildchain() -> Result<(), String> {
                         .takes_value(true)
                         .help("Remote LXC server"),
                 )
-                .arg(
-                    Arg::new("source_url")
-                        .takes_value(true)
-                        .help("Source URL"),
-                )
+                .arg(Arg::new("source_url").takes_value(true).help("Source URL"))
                 .arg(
                     Arg::new("source_kind")
                         .takes_value(true)
@@ -106,11 +102,7 @@ fn buildchain() -> Result<(), String> {
                         .required(true)
                         .help("Remote URL"),
                 )
-                .arg(
-                    Arg::new("file")
-                        .takes_value(true)
-                        .help("Requested file"),
-                ),
+                .arg(Arg::new("file").takes_value(true).help("Requested file")),
         )
         .get_matches();
 

@@ -33,7 +33,11 @@ impl PackedBlock {
     // Convert to a usable struct through verification
     pub(crate) fn verify(&self, key: &[u8]) -> Result<Block, String> {
         if self.public_key != key {
-            return Err("public key mismatch".to_string());
+            return Err(format!(
+                "public key mismatch: remote {} is not expected {}",
+                b32enc(&self.public_key),
+                b32enc(key)
+            ));
         }
 
         {
