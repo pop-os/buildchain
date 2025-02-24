@@ -1,3 +1,11 @@
+buildchain (0.5.3) jammy; urgency=medium
+
+  * Improved error message for public key mismatch
+  * Removed implicit requirement of LXD containers having dhclient
+  * Updated dependencies
+
+ -- Tim Crawford <tcrawford@system76.com>  Mon, 24 Feb 2025 11:03:21 -0700
+
 buildchain (0.5.1) bionic; urgency=medium
 
   * Added option to print the version
