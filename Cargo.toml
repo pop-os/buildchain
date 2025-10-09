@@ -20,7 +20,6 @@ doc = false
 [dependencies]
 base32 = "0.4.0"
 clap = "3.2.25"
-lxd = "0.1.9"
 plain = "0.2.3"
 rand = "0.8.5"
 reqwest = { version = "0.11.20", features = ["blocking"] }

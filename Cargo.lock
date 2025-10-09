@@ -88,7 +88,6 @@ version = "0.5.3"
 dependencies = [
  "base32",
  "clap",
- "lxd",
  "plain",
  "rand",
  "reqwest",
@@ -681,16 +680,6 @@ name = "log"
 version = "0.4.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "30bde2b3dc3671ae49d8e2e9f044c7c005836e7a023ee57cffa25ab82764bb9e"
-
-[[package]]
-name = "lxd"
-version = "0.1.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b339999789a3d5b2ec0f6ba46121155c86daad25cf5e40f35f9718751bb35e7"
-dependencies = [
- "serde",
- "serde_json",
-]
 
 [[package]]
 name = "memchr"

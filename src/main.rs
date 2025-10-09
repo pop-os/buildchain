@@ -44,13 +44,6 @@ fn buildchain() -> Result<(), String> {
                         .takes_value(true)
                         .help("Tail signature branch name"),
                 )
-                .arg(
-                    Arg::new("remote")
-                        .short('r')
-                        .long("remote")
-                        .takes_value(true)
-                        .help("Remote LXC server"),
-                )
                 .arg(Arg::new("source_url").takes_value(true).help("Source URL"))
                 .arg(
                     Arg::new("source_kind")
@@ -112,7 +105,6 @@ fn buildchain() -> Result<(), String> {
             output_path: matches.value_of("output").unwrap_or("buildchain.tar"),
             project_name: matches.value_of("project").unwrap_or("default"),
             branch_name: matches.value_of("branch").unwrap_or("master"),
-            remote_opt: matches.value_of("remote"),
             source_url: matches.value_of("source_url").unwrap_or("."),
             source_kind: matches.value_of("source_kind").unwrap_or("dir"),
             use_pihsm: matches.is_present("use_pihsm"),
