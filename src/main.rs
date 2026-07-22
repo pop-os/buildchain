@@ -3,14 +3,14 @@
 #![allow(clippy::uninlined_format_args)]
 
 use buildchain::{build, download, BuildArguments, DownloadArguments};
-use clap::{App, Arg};
+use clap::{Arg, Command};
 use std::process;
 
 fn buildchain() -> Result<(), String> {
-    let matches = App::new("buildchain")
+    let matches = Command::new("buildchain")
         .version(env!("CARGO_PKG_VERSION"))
         .subcommand(
-            App::new("build")
+            Command::new("build")
                 .about("Build a buildchain project")
                 .arg(
                     Arg::new("use_pihsm")
@@ -22,40 +22,50 @@ fn buildchain() -> Result<(), String> {
                     Arg::new("config")
                         .short('c')
                         .long("config")
-                        .takes_value(true)
-                        .help("Configuration file"),
+                        .num_args(1)
+                        .help("Configuration file")
+                        .default_value("buildchain.json"),
                 )
                 .arg(
                     Arg::new("output")
                         .short('o')
                         .long("output")
-                        .takes_value(true)
-                        .help("Output directory"),
+                        .num_args(1)
+                        .help("Output directory")
+                        .default_value("buildchain.tar"),
                 )
                 .arg(
                     Arg::new("project")
                         .long("project")
-                        .takes_value(true)
-                        .help("Tail signature project name"),
+                        .num_args(1)
+                        .help("Tail signature project name")
+                        .default_value("default"),
                 )
                 .arg(
                     Arg::new("branch")
                         .long("branch")
-                        .takes_value(true)
-                        .help("Tail signature branch name"),
+                        .num_args(1)
+                        .help("Tail signature branch name")
+                        .default_value("master"),
                 )
                 .arg(
                     Arg::new("remote")
                         .short('r')
                         .long("remote")
-                        .takes_value(true)
+                        .num_args(1)
                         .help("Remote LXC server"),
                 )
-                .arg(Arg::new("source_url").takes_value(true).help("Source URL"))
+                .arg(
+                    Arg::new("source_url")
+                        .num_args(1)
+                        .help("Source URL")
+                        .default_value("."),
+                )
                 .arg(
                     Arg::new("source_kind")
-                        .takes_value(true)
-                        .help("Source Kind (dir, git)"),
+                        .num_args(1)
+                        .help("Source Kind (dir, git)")
+                        .default_value("dir"),
                 )
                 .arg(
                     Arg::new("exclude_source")
@@ -64,70 +74,72 @@ fn buildchain() -> Result<(), String> {
                 ),
         )
         .subcommand(
-            App::new("download")
+            Command::new("download")
                 .about("Download from a buildchain project")
                 .arg(
                     Arg::new("project")
                         .long("project")
-                        .takes_value(true)
-                        .help("Tail signature project name"),
+                        .num_args(1)
+                        .help("Tail signature project name")
+                        .default_value("default"),
                 )
                 .arg(
                     Arg::new("branch")
                         .long("branch")
-                        .takes_value(true)
-                        .help("Tail signature branch name"),
+                        .num_args(1)
+                        .help("Tail signature branch name")
+                        .default_value("master"),
                 )
                 .arg(
                     Arg::new("cert")
                         .long("cert")
-                        .takes_value(true)
+                        .num_args(1)
                         .help("Remote URL certificate"),
                 )
                 .arg(
                     Arg::new("cache")
                         .long("cache")
-                        .takes_value(true)
+                        .num_args(1)
                         .help("Local cache"),
                 )
                 .arg(
                     Arg::new("key")
-                        .takes_value(true)
+                        .num_args(1)
                         .required(true)
                         .help("Remote public key"),
                 )
                 .arg(
                     Arg::new("url")
-                        .takes_value(true)
+                        .num_args(1)
                         .required(true)
                         .help("Remote URL"),
                 )
-                .arg(Arg::new("file").takes_value(true).help("Requested file")),
+                .arg(Arg::new("file").num_args(1).help("Requested file")),
         )
         .get_matches();
 
     if let Some(matches) = matches.subcommand_matches("build") {
         build(BuildArguments {
-            config_path: matches.value_of("config").unwrap_or("buildchain.json"),
-            output_path: matches.value_of("output").unwrap_or("buildchain.tar"),
-            project_name: matches.value_of("project").unwrap_or("default"),
-            branch_name: matches.value_of("branch").unwrap_or("master"),
-            remote_opt: matches.value_of("remote"),
-            source_url: matches.value_of("source_url").unwrap_or("."),
-            source_kind: matches.value_of("source_kind").unwrap_or("dir"),
-            use_pihsm: matches.is_present("use_pihsm"),
-            exclude_source: matches.is_present("exclude_source"),
+            config_path: matches.get_one::<String>("config").unwrap(),
+            output_path: matches.get_one::<String>("output").unwrap(),
+            project_name: matches.get_one::<String>("project").unwrap(),
+            branch_name: matches.get_one::<String>("branch").unwrap(),
+            remote_opt: matches.get_one::<String>("remote").map(|s| s.as_str()),
+            source_url: matches.get_one::<String>("source_url").unwrap(),
+            source_kind: matches.get_one::<String>("source_kind").unwrap(),
+            use_pihsm: matches.contains_id("use_pihsm"),
+            exclude_source: matches.contains_id("exclude_source"),
         })
         .map_err(|err| format!("failed to build: {}", err))
     } else if let Some(matches) = matches.subcommand_matches("download") {
         download(DownloadArguments {
-            project: matches.value_of("project").unwrap_or("default"),
-            branch: matches.value_of("branch").unwrap_or("master"),
-            cert_opt: matches.value_of("cert"),
-            cache_opt: matches.value_of("cache"),
-            key: matches.value_of("key").unwrap(),
-            url: matches.value_of("url").unwrap(),
-            file_opt: matches.value_of("file"),
+            project: matches.get_one::<String>("project").unwrap(),
+            branch: matches.get_one::<String>("branch").unwrap(),
+            cert_opt: matches.get_one::<String>("cert").map(|s| s.as_str()),
+            cache_opt: matches.get_one::<String>("cache").map(|s| s.as_str()),
+            key: matches.get_one::<String>("key").unwrap(),
+            url: matches.get_one::<String>("url").unwrap(),
+            file_opt: matches.get_one::<String>("file").map(|s| s.as_str()),
         })
     } else {
         Err("no subcommand provided".to_string())

@@ -7,13 +7,13 @@ use std::os::unix::fs::{symlink, OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 
 use base32::{self, Alphabet};
-use rand::rngs::OsRng;
-use rand::RngCore;
+use rand::rngs::SysRng;
+use rand::TryRng;
 use sha2::{Digest, Sha384};
 
 use crate::Manifest;
 
-const B32_ALPHABET: Alphabet = Alphabet::RFC4648 { padding: false };
+const B32_ALPHABET: Alphabet = Alphabet::Rfc4648 { padding: false };
 
 pub fn b32enc(bin: &[u8]) -> String {
     base32::encode(B32_ALPHABET, bin)
@@ -38,7 +38,7 @@ fn tail_to_block(sig: &[u8; 64]) -> PathBuf {
 
 pub fn random_id() -> String {
     let mut key = [0u8; 15];
-    OsRng.fill_bytes(&mut key);
+    SysRng.try_fill_bytes(&mut key).unwrap();
     b32enc(&key)
 }
 
@@ -219,7 +219,7 @@ mod tests {
     use std::os::unix::fs::PermissionsExt;
     use std::path::{Path, PathBuf};
 
-    use rand::{rngs::OsRng, RngCore};
+    use rand::{rngs::SysRng, TryRng};
     use tempfile::TempDir;
 
     use super::{tail_to_block, Store};
@@ -283,7 +283,7 @@ mod tests {
 
         let content = {
             let mut content = [0u8; 34969];
-            OsRng.fill_bytes(&mut content);
+            SysRng.try_fill_bytes(&mut content).unwrap();
             content
         };
 
@@ -326,7 +326,7 @@ mod tests {
 
         let content = {
             let mut content = [0u8; 1776];
-            OsRng.fill_bytes(&mut content);
+            SysRng.try_fill_bytes(&mut content).unwrap();
             content
         };
         let key: [u8; 48] = store.write_object(&content).unwrap();
@@ -359,7 +359,7 @@ mod tests {
 
         let block = {
             let mut block = [0u8; 400];
-            OsRng.fill_bytes(&mut block);
+            SysRng.try_fill_bytes(&mut block).unwrap();
             block
         };
 
@@ -394,7 +394,7 @@ mod tests {
 
         let block = {
             let mut block = [0u8; 400];
-            OsRng.fill_bytes(&mut block);
+            SysRng.try_fill_bytes(&mut block).unwrap();
             block
         };
 
