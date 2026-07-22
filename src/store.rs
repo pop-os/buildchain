@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 use std::collections::BTreeMap;
-use std::fs::{create_dir, read_dir, remove_dir, rename, File, OpenOptions};
+use std::fs::{File, OpenOptions, create_dir, read_dir, remove_dir, rename};
 use std::io::{self, Read, Write};
-use std::os::unix::fs::{symlink, OpenOptionsExt, PermissionsExt};
+use std::os::unix::fs::{OpenOptionsExt, PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
 
 use base32::{self, Alphabet};
-use rand::rngs::SysRng;
 use rand::TryRng;
+use rand::rngs::SysRng;
 use sha2::{Digest, Sha384};
 
 use crate::Manifest;
@@ -214,15 +214,15 @@ impl Store {
 
 #[cfg(test)]
 mod tests {
-    use std::fs::{create_dir, File};
+    use std::fs::{File, create_dir};
     use std::io::{Read, Write};
     use std::os::unix::fs::PermissionsExt;
     use std::path::{Path, PathBuf};
 
-    use rand::{rngs::SysRng, TryRng};
+    use rand::{TryRng, rngs::SysRng};
     use tempfile::TempDir;
 
-    use super::{tail_to_block, Store};
+    use super::{Store, tail_to_block};
 
     #[test]
     fn test_new() {
@@ -253,11 +253,15 @@ mod tests {
         let s = Store::new(Path::new("/p"));
         assert_eq!(
             s.object_path(&[0u8; 48]).as_path(),
-            Path::new("/p/object/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+            Path::new(
+                "/p/object/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+            )
         );
         assert_eq!(
             s.object_path(&[255u8; 48]).as_path(),
-            Path::new("/p/object/77777777777777777777777777777777777777777777777777777777777777777777777777776")
+            Path::new(
+                "/p/object/77777777777777777777777777777777777777777777777777777777777777777777777777776"
+            )
         );
     }
 
@@ -268,11 +272,15 @@ mod tests {
         let sig2 = [255u8; 64];
         assert_eq!(
             s.block_path(&sig1).as_path(),
-            Path::new("/p/block/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+            Path::new(
+                "/p/block/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+            )
         );
         assert_eq!(
             s.block_path(&sig2).as_path(),
-            Path::new("/p/block/777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777Y")
+            Path::new(
+                "/p/block/777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777Y"
+            )
         );
     }
 

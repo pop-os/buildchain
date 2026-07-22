@@ -2,7 +2,7 @@
 
 #![allow(clippy::uninlined_format_args)]
 
-use buildchain::{build, download, BuildArguments, DownloadArguments};
+use buildchain::{BuildArguments, DownloadArguments, build, download};
 use clap::{Arg, Command};
 use std::process;
 

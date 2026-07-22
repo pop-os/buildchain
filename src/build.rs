@@ -9,7 +9,7 @@ use std::process::Command;
 use lxd::{Container, Image, Location};
 use tempfile::TempDir;
 
-use crate::{sign_manifest, Config, Sha384, Source, Store};
+use crate::{Config, Sha384, Source, Store, sign_manifest};
 
 /// A temporary structure used to generate a unique build environment
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
@@ -27,11 +27,9 @@ fn prepare(config: &Config, location: &Location) -> io::Result<String> {
     })
     .map_err(io::Error::other)?;
 
-    let build_sha = Sha384::new(&mut build_json.as_bytes())
-        .map_err(io::Error::other)?;
+    let build_sha = Sha384::new(&mut build_json.as_bytes()).map_err(io::Error::other)?;
 
-    let build_sha_str = serde_json::to_string(&build_sha)
-        .map_err(io::Error::other)?;
+    let build_sha_str = serde_json::to_string(&build_sha).map_err(io::Error::other)?;
 
     let container_name = format!("buildchain-{}-prepare", config.name);
     let build_image = format!(
@@ -163,9 +161,10 @@ fn archive<P: AsRef<Path>, Q: AsRef<Path>>(
     if status.success() {
         Ok(())
     } else {
-        Err(io::Error::other(
-            format!("tar failed with status: {}", status),
-        ))
+        Err(io::Error::other(format!(
+            "tar failed with status: {}",
+            status
+        )))
     }
 }
 
