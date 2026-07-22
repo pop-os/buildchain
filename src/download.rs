@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 use std::fs::File;
-use std::io::{stdout, Read, Write};
+use std::io::{Read, Write, stdout};
 
 use crate::block::PackedBlock;
 use crate::store::b32dec;
-use crate::{err_str, Block, Manifest, Sha384};
+use crate::{Block, Manifest, Sha384, err_str};
 
 pub struct DownloadArguments<'a> {
     pub project: &'a str,

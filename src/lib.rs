@@ -7,9 +7,9 @@
 pub use lxd::Location;
 
 pub use crate::block::Block;
-pub use crate::build::{build, BuildArguments};
+pub use crate::build::{BuildArguments, build};
 pub use crate::config::Config;
-pub use crate::download::{download, DownloadArguments, Downloader};
+pub use crate::download::{DownloadArguments, Downloader, download};
 pub use crate::manifest::Manifest;
 pub use crate::pihsm::sign_manifest;
 pub use crate::sha384::Sha384;

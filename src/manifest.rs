@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use std::fs::{read_dir, File};
+use std::fs::{File, read_dir};
 use std::io::{Error, ErrorKind, Result};
 use std::path::Path;
 
