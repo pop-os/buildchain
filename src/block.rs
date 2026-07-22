@@ -7,7 +7,7 @@ use sodalite::sign_attached_open;
 use crate::store::b32enc;
 
 #[allow(dead_code)]
-#[repr(packed)]
+#[repr(C, packed)]
 pub(crate) struct PackedBlockRequest {
     signature: [u8; 64],
     public_key: [u8; 32],
@@ -17,7 +17,7 @@ pub(crate) struct PackedBlockRequest {
     digest: [u8; 48],
 }
 
-#[repr(packed)]
+#[repr(C, packed)]
 pub(crate) struct PackedBlock {
     signature: [u8; 64],
     public_key: [u8; 32],

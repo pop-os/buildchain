@@ -27,8 +27,7 @@ impl Source {
                     .wait()?;
 
                 if !status.success() {
-                    return Err(io::Error::new(
-                        io::ErrorKind::Other,
+                    return Err(io::Error::other(
                         format!("Copy error: {}", status),
                     ));
                 }
@@ -44,15 +43,13 @@ impl Source {
                     .wait_with_output()?;
 
                 if !output.status.success() {
-                    return Err(io::Error::new(
-                        io::ErrorKind::Other,
+                    return Err(io::Error::other(
                         format!("Find error: {}", output.status),
                     ));
                 }
 
                 let stdout = String::from_utf8(output.stdout).map_err(|err| {
-                    io::Error::new(
-                        io::ErrorKind::Other,
+                    io::Error::other(
                         format!("Find output not UTF-8: {}", err),
                     )
                 })?;
@@ -62,12 +59,11 @@ impl Source {
                     let mut parts = line.trim().split('.');
 
                     let time_str = parts.next().ok_or_else(|| {
-                        io::Error::new(io::ErrorKind::Other, "Find time not valid".to_string())
+                        io::Error::other("Find time not valid".to_string())
                     })?;
 
                     let time = time_str.parse::<u64>().map_err(|err| {
-                        io::Error::new(
-                            io::ErrorKind::Other,
+                        io::Error::other(
                             format!("Find time not a number: {}", err),
                         )
                     })?;
@@ -86,8 +82,7 @@ impl Source {
 
                 match time_opt {
                     Some(time) => Ok(time),
-                    None => Err(io::Error::new(
-                        io::ErrorKind::Other,
+                    None => Err(io::Error::other(
                         "Find time not found".to_string(),
                     )),
                 }
@@ -102,8 +97,7 @@ impl Source {
                     .wait()?;
 
                 if !status.success() {
-                    return Err(io::Error::new(
-                        io::ErrorKind::Other,
+                    return Err(io::Error::other(
                         format!("Git clone error: {}", status),
                     ));
                 }
@@ -119,30 +113,26 @@ impl Source {
                     .wait_with_output()?;
 
                 if !output.status.success() {
-                    return Err(io::Error::new(
-                        io::ErrorKind::Other,
+                    return Err(io::Error::other(
                         format!("Git log error: {}", output.status),
                     ));
                 }
 
                 let stdout = String::from_utf8(output.stdout).map_err(|err| {
-                    io::Error::new(
-                        io::ErrorKind::Other,
+                    io::Error::other(
                         format!("Git log output not UTF-8: {}", err),
                     )
                 })?;
 
                 let time = stdout.trim().parse::<u64>().map_err(|err| {
-                    io::Error::new(
-                        io::ErrorKind::Other,
+                    io::Error::other(
                         format!("Git log time not a number: {}", err),
                     )
                 })?;
 
                 Ok(time)
             }
-            _ => Err(io::Error::new(
-                io::ErrorKind::Other,
+            _ => Err(io::Error::other(
                 format!("Unknown source kind: {}", self.kind),
             )),
         }

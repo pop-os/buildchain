@@ -25,13 +25,13 @@ fn prepare(config: &Config, location: &Location) -> io::Result<String> {
         base: config.base.clone(),
         prepare: config.prepare.clone(),
     })
-    .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+    .map_err(io::Error::other)?;
 
     let build_sha = Sha384::new(&mut build_json.as_bytes())
-        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        .map_err(io::Error::other)?;
 
     let build_sha_str = serde_json::to_string(&build_sha)
-        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        .map_err(io::Error::other)?;
 
     let container_name = format!("buildchain-{}-prepare", config.name);
     let build_image = format!(
@@ -163,8 +163,7 @@ fn archive<P: AsRef<Path>, Q: AsRef<Path>>(
     if status.success() {
         Ok(())
     } else {
-        Err(io::Error::new(
-            io::ErrorKind::Other,
+        Err(io::Error::other(
             format!("tar failed with status: {}", status),
         ))
     }
