@@ -3,7 +3,7 @@
 #![allow(clippy::uninlined_format_args)]
 
 use buildchain::{BuildArguments, DownloadArguments, build, download};
-use clap::{Arg, Command};
+use clap::{Arg, ArgAction, Command};
 use std::process;
 
 fn buildchain() -> Result<(), String> {
@@ -16,6 +16,7 @@ fn buildchain() -> Result<(), String> {
                     Arg::new("use_pihsm")
                         .short('p')
                         .long("pihsm")
+                        .action(ArgAction::SetTrue)
                         .help("Sign manifest with PiHSM"),
                 )
                 .arg(
@@ -70,6 +71,7 @@ fn buildchain() -> Result<(), String> {
                 .arg(
                     Arg::new("exclude_source")
                         .long("exclude-source")
+                        .action(ArgAction::SetTrue)
                         .help("Exclude the source checkout from the archive"),
                 ),
         )
@@ -127,8 +129,8 @@ fn buildchain() -> Result<(), String> {
             remote_opt: matches.get_one::<String>("remote").map(|s| s.as_str()),
             source_url: matches.get_one::<String>("source_url").unwrap(),
             source_kind: matches.get_one::<String>("source_kind").unwrap(),
-            use_pihsm: matches.contains_id("use_pihsm"),
-            exclude_source: matches.contains_id("exclude_source"),
+            use_pihsm: matches.get_flag("use_pihsm"),
+            exclude_source: matches.get_flag("exclude_source"),
         })
         .map_err(|err| format!("failed to build: {}", err))
     } else if let Some(matches) = matches.subcommand_matches("download") {
